@@ -1,0 +1,154 @@
+﻿<Window x:Class="TotoBook.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TotoBook"
+        xmlns:WindowsPresentationFoundation="clr-namespace:Microsoft.WindowsAPICodePack.Controls.WindowsPresentationFoundation;assembly=Microsoft.WindowsAPICodePack.Shell"
+        mc:Ignorable="d"
+        Title="Toto" Height="900" Width="1000"
+        Loaded="Window_Loaded"
+        KeyDown="Window_KeyDown">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Name="MenuBar">
+            <MenuItem Header="ファイル"></MenuItem>
+            <MenuItem Header="編集"></MenuItem>
+            <MenuItem Header="移動"></MenuItem>
+            <MenuItem Header="イメージ"></MenuItem>
+            <MenuItem Header="表示"></MenuItem>
+            <MenuItem Header="オプション"></MenuItem>
+            <MenuItem Header="ヘルプ"></MenuItem>
+        </Menu>
+        <ToolBar DockPanel.Dock="Top" Height="50" Name="ToolBar">
+            <Button Content="戻る" Width="45" Height="45" Click="BackHistoryButton_Click"></Button>
+            <Button Content="進む" Width="45" Height="45" Click="NextHistoryButton_Click"></Button>
+            <Button Content="上" Width="45" Height="45" Click="UpButton_Click"></Button>
+            <Button Content="更新" Width="45" Height="45" Click="RefreshButton_Click"></Button>
+            <Separator />
+            <Button Content="フォルダ" Width="45" Height="45"></Button>
+            <Button Content="本棚" Width="45" Height="45"></Button>
+            <Button Content="メディア" Width="45" Height="45"></Button>
+            <Separator />
+            <Button Content="検索" Width="45" Height="45"></Button>
+            <Separator />
+        </ToolBar>
+        <DockPanel DockPanel.Dock="Top" Name="AddressBar">
+            <Label DockPanel.Dock="Left">アドレス</Label>
+            <Button DockPanel.Dock="Right" Margin="3">=></Button>
+            <TextBox Margin="3"></TextBox>
+        </DockPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Name="ColumnDefinition1" Width="350" />
+                <ColumnDefinition Name="ColumnDefinition2" Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="5" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TreeView Grid.Row="0" Name="FileTree" ItemsSource="{Binding FileTreeRoot}">
+                    <TreeView.Resources>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding Path=IsExpanded,Mode=TwoWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding Path=IsSelected,Mode=TwoWay}"/>
+                        </Style>
+                    </TreeView.Resources>
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type local:FileInfoViewModel}" ItemsSource="{Binding Children}">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding Icon}"></Image>
+                                <TextBlock Text="{Binding Name}"/>
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+                <GridSplitter Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" Focusable="False" ResizeDirection="Rows" />
+                <DataGrid Grid.Row="2" Name="FileList" 
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          GridLinesVisibility="None"
+                          RowHeaderWidth="0"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserReorderColumns="True"
+                          CanUserResizeColumns="True"
+                          CanUserResizeRows="True"
+                          CanUserSortColumns="False"
+                          IsSynchronizedWithCurrentItem="False"
+                          SelectionMode="Single"
+                          ItemsSource="{Binding FileInfoList}"
+                          SelectedItem="{Binding SelectedFileInfo, Mode=TwoWay}"
+                          >
+                    <DataGrid.Resources>
+                        <Style TargetType="DataGridRow">
+                            <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick"/>
+                            <EventSetter Event="KeyDown" Handler="DataGridRow_KeyDown"/>
+                        </Style>
+                    </DataGrid.Resources>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDisplayed}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="名前" SortMemberPath="Name">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="{x:Type local:FileInfoViewModel}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="{Binding Icon}"></Image>
+                                        <TextBlock Text="{Binding Name}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="サイズ" Binding="{Binding Size}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="種類" Binding="{Binding Type}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="更新日時" Binding="{Binding LastUpdateDate}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Focusable="False" />
+            <DockPanel Grid.Column="2">
+                <ToolBar Name="ToolBar2" DockPanel.Dock="Top" Height="30">
+                    <Button Content="←←" Click="ToNextSceneButton_Click"></Button>
+                    <Button Content="←" Click="ToNextPageButton_Click"></Button>
+                    <Label Margin="30,0,0,0" Content="{Binding CurrentPageNumber}"></Label>
+                    <Label Content="/"></Label>
+                    <Label Margin="0,0,30,0" Content="{Binding TotalPageCount}"></Label>
+                    <Button Content="→" Click="ToPrevPageButton_Click"></Button>
+                    <Button Content="→→" Click="ToPrevSceneButton_Click"></Button>
+                    <Separator />
+                    <ToggleButton Name="AutoPagerButton" Content="自動" IsChecked="{Binding IsEnabledAutoPager}" Click="AutoPagerButton_Click"></ToggleButton>
+                </ToolBar>
+                <DockPanel Name="ImageContainer" Focusable="True"
+                        Background="Black"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch"
+                        MouseWheel="ImageContainer_MouseWheel"
+                        MouseLeftButtonDown="ImageContainer_MouseLeftButtonDown"
+                        KeyDown="ImageContainer_KeyDown">
+                    <Image>
+                        <Image.Source>
+                            <DrawingImage>
+                                <DrawingImage.Drawing>
+                                    <DrawingGroup x:Name="image">
+                                        <ImageDrawing ImageSource="{Binding RightImageSource}" Rect="{Binding RightImageRect}"></ImageDrawing>
+                                        <ImageDrawing ImageSource="{Binding LeftImageSource}" Rect="{Binding LeftImageRect}"></ImageDrawing>
+                                    </DrawingGroup>
+                                </DrawingImage.Drawing>
+                            </DrawingImage>
+                        </Image.Source>
+                    </Image>
+                </DockPanel>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>
