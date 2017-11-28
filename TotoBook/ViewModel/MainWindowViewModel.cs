@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace TotoBook
+namespace TotoBook.ViewModel
 {
     /// <summary>
     /// メインウィンドウのビューモデル
@@ -585,7 +585,7 @@ namespace TotoBook
                 .Count(fileinfo => fileinfo.FileType == FileInfoViewModel.FileInfoType.File);
 
             fileInfoArray
-                .OrderBy(file => file.Name)
+                .OrderBy(file => file, new FileNameComparer())
                 .ForEach(fileInfo =>
                 {
                     this.FileInfoList.Add(fileInfo);

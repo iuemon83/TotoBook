@@ -85,6 +85,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ViewModel\FileNameComparer.cs" />
     <Compile Include="Spi\FileInfo.cs" />
     <Compile Include="Spi\InputFlag.cs" />
     <Compile Include="Spi\PictureInfo.cs" />
@@ -93,20 +94,19 @@
     <Compile Include="Spi\SusiePlugin.cs" />
     <Compile Include="Spi\SusiePluginType.cs" />
     <Compile Include="Spi\Win32.cs" />
-    <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApplicationSettings.cs" />
     <Compile Include="AutoPagerTimer.cs" />
-    <Compile Include="FileInfoViewModel.cs" />
+    <Compile Include="ViewModel\FileInfoViewModel.cs" />
     <Compile Include="HistoryService.cs" />
-    <Compile Include="IFileListItemViewModel.cs" />
-    <Compile Include="IFileTreeItemViewModel.cs" />
+    <Compile Include="ViewModel\IFileListItemViewModel.cs" />
+    <Compile Include="ViewModel\IFileTreeItemViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MainWindowViewModel.cs" />
+    <Compile Include="ViewModel\MainWindowViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -139,5 +139,6 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TotoBook"
+        xmlns:viewModels="clr-namespace:TotoBook.ViewModel"
         xmlns:WindowsPresentationFoundation="clr-namespace:Microsoft.WindowsAPICodePack.Controls.WindowsPresentationFoundation;assembly=Microsoft.WindowsAPICodePack.Shell"
         mc:Ignorable="d"
         Title="Toto" Height="900" Width="1000"
@@ -57,7 +58,7 @@
                         </Style>
                     </TreeView.Resources>
                     <TreeView.ItemTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type local:FileInfoViewModel}" ItemsSource="{Binding Children}">
+                        <HierarchicalDataTemplate DataType="{x:Type viewModels:FileInfoViewModel}" ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="{Binding Icon}"></Image>
                                 <TextBlock Text="{Binding Name}"/>
@@ -101,7 +102,7 @@
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="名前" SortMemberPath="Name">
                             <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate DataType="{x:Type local:FileInfoViewModel}">
+                                <DataTemplate DataType="{x:Type viewModels:FileInfoViewModel}">
                                     <StackPanel Orientation="Horizontal">
                                         <Image Source="{Binding Icon}"></Image>
                                         <TextBlock Text="{Binding Name}"/>
