@@ -553,14 +553,18 @@ namespace TotoBook.ViewModel
             this._rightFile = rightFile;
             this._leftFile = leftFile;
 
+            var rectWidth = Math.Min(rightImage.Width, leftImage.Width);
+            var rightRectHeight = rightImage.Height * rectWidth / rightImage.Width;
+            var leftRectHeight = leftImage.Height * rectWidth / leftImage.Width;
+
             this.RightImageRect = rightImage == null
                 ? default
-                : new Rect(rightImage.Width, 150, rightImage.Width, rightImage.Height);
+                : new Rect(rectWidth, 150, rectWidth, rightRectHeight);
             this.RightImageSource = rightImage;
 
             this.LeftImageRect = leftImage == null
                 ? default
-                : new Rect(0, 150, leftImage.Width, leftImage.Height);
+                : new Rect(0, 150, rectWidth, leftRectHeight);
             this.LeftImageSource = leftImage;
 
             this.SelectedFileInfo = this.FileInfoList.FirstOrDefault(f => f.Name == rightFile.Name);
