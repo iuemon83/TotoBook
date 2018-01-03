@@ -76,9 +76,10 @@
                           CanUserReorderColumns="True"
                           CanUserResizeColumns="True"
                           CanUserResizeRows="True"
-                          CanUserSortColumns="False"
+                          CanUserSortColumns="True"
                           IsSynchronizedWithCurrentItem="False"
                           SelectionMode="Single"
+                          Sorting="FileList_Sorting"
                           ItemsSource="{Binding FileInfoList}"
                           SelectedItem="{Binding SelectedFileInfo, Mode=TwoWay}"
                           >

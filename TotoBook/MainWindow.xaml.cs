@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TotoBook.ViewModel;
@@ -368,6 +370,24 @@ namespace TotoBook
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void FileList_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            var preDir = e.Column.SortDirection;
+            var newDir = preDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+
+            //ViewModelのメソッドを呼び出し
+            this.ViewModel.ExecuteSort(e.Column.SortMemberPath, newDir);
+
+            //※ItemsSourceへのバインドを先に強制評価する
+            this.FileList.GetBindingExpression(DataGrid.ItemsSourceProperty).UpdateTarget();
+
+            //ソートアイコン表示
+            var clm = this.FileList.Columns.First(c => c.SortMemberPath == e.Column.SortMemberPath);
+            clm.SortDirection = newDir;
         }
     }
 }
