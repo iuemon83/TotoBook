@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -50,7 +51,18 @@ namespace TotoBook.ViewModel
         /// <summary>
         /// ファイルリストの要素
         /// </summary>
-        public ObservableCollection<FileInfoViewModel> FileInfoList { get; set; } = new ObservableCollection<FileInfoViewModel>();
+        private ObservableCollection<FileInfoViewModel> _fileInfoList = new ObservableCollection<FileInfoViewModel>();
+        public ObservableCollection<FileInfoViewModel> FileInfoList
+        {
+            get { return this._fileInfoList; }
+            set
+            {
+                _fileInfoList = value;
+                this.RaisePropertyChanged();
+            }
+        }
+
+        private SortDescription _currentSort;
 
         /// <summary>
         /// 選択中のファイルリスト要素
@@ -172,6 +184,8 @@ namespace TotoBook.ViewModel
         /// </summary>
         public MainWindowViewModel()
         {
+            this._currentSort = new SortDescription("Name", ListSortDirection.Ascending);
+
             this.autoPagerTimer = new AutoPagerTimer(() => this.ToNextScene());
 
             Spi.SpiManager.Load(ApplicationSettings.Instance.PluginDirectoryPath);
@@ -589,13 +603,14 @@ namespace TotoBook.ViewModel
                 .Count(fileinfo => fileinfo.FileType == FileInfoViewModel.FileInfoType.File);
 
             fileInfoArray
-                .OrderBy(file => file, new FileNameComparer())
                 .ForEach(fileInfo =>
                 {
                     this.FileInfoList.Add(fileInfo);
                 });
 
             this.SelectedFileInfo = this.FileInfoList.FirstOrDefault();
+
+            this.ExecuteSort(this._currentSort.PropertyName, this._currentSort.Direction);
         }
 
         /// <summary>
@@ -646,6 +661,40 @@ namespace TotoBook.ViewModel
         {
             this.autoPagerTimer.Toggle();
             this.IsEnabledAutoPager = this.autoPagerTimer.IsEnabled;
+        }
+
+        public void ExecuteSort(string propertyName, ListSortDirection direction)
+        {
+
+            var isAsc = direction == ListSortDirection.Ascending;
+
+            IEnumerable<FileInfoViewModel> sortedQuery;
+
+            switch (propertyName)
+            {
+                case "Name":
+                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file, new FileNameComparer()) : FileInfoList.OrderByDescending(p => p.Name);
+                    break;
+                case "Size":
+                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file.Size) : FileInfoList.OrderByDescending(p => p.Size);
+                    break;
+                case "Type":
+                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file.Type) : FileInfoList.OrderByDescending(p => p.Type);
+                    break;
+                case "LastUpdateDate":
+                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file.LastUpdateDate) : FileInfoList.OrderByDescending(p => p.LastUpdateDate);
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+
+            FileInfoList = new ObservableCollection<FileInfoViewModel>(sortedQuery);
+
+            ////ソートアイコン表示をViewに依頼
+            //Messenger.Instance.Send<SortMessage, MainWindow>(new SortMessage(propertyName, direction));
+
+            //ソート情報保持
+            _currentSort = new SortDescription(propertyName, direction);
         }
     }
 }
