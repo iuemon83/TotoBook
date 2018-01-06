@@ -409,6 +409,7 @@ namespace TotoBook.ViewModel
                     break;
 
                 case FileInfoViewModel.FileInfoType.Archive:
+                case FileInfoViewModel.FileInfoType.ArchivedDirectory:
                     this.NavigateToArchiveFile(fileInfo);
                     break;
 
@@ -428,8 +429,6 @@ namespace TotoBook.ViewModel
         /// <param name="dist">対象のアーカイブファイル</param>
         private void NavigateToArchiveFile(FileInfoViewModel dist)
         {
-            if (dist.FileType != FileInfoViewModel.FileInfoType.Archive) return;
-
             this.autoPagerTimer.Stop();
             this.IsEnabledAutoPager = false;
 
@@ -559,6 +558,8 @@ namespace TotoBook.ViewModel
         /// <param name="leftImage"></param>
         private void DisplayImages(FileInfoViewModel rightFile, BitmapImage rightImage, FileInfoViewModel leftFile, BitmapImage leftImage)
         {
+            if (rightImage == null) throw new ArgumentNullException(nameof(rightImage));
+
             this.FileInfoList.ForEach(f => f.IsDisplayed = false);
 
             if (rightFile != null) rightFile.IsDisplayed = true;
@@ -567,18 +568,24 @@ namespace TotoBook.ViewModel
             this._rightFile = rightFile;
             this._leftFile = leftFile;
 
-            var rectWidth = Math.Min(rightImage.Width, leftImage.Width);
-            var rightRectHeight = rightImage.Height * rectWidth / rightImage.Width;
-            var leftRectHeight = leftImage.Height * rectWidth / leftImage.Width;
+            var rectWidth = leftImage == null
+                ? rightImage.Width
+                : Math.Min(rightImage.Width, leftImage.Width);
 
-            this.RightImageRect = rightImage == null
-                ? default
-                : new Rect(rectWidth, 150, rectWidth, rightRectHeight);
+            var rightRectHeight = rightImage.Height * rectWidth / rightImage.Width;
+            this.RightImageRect = new Rect(rectWidth, 150, rectWidth, rightRectHeight);
             this.RightImageSource = rightImage;
 
-            this.LeftImageRect = leftImage == null
-                ? default
-                : new Rect(0, 150, rectWidth, leftRectHeight);
+            if (leftImage == null)
+            {
+                this.leftImageRect = default;
+            }
+            else
+            {
+                var leftRectHeight = leftImage.Height * rectWidth / leftImage.Width;
+                this.LeftImageRect = new Rect(0, 150, rectWidth, leftRectHeight);
+            }
+
             this.LeftImageSource = leftImage;
 
             this.SelectedFileInfo = this.FileInfoList.FirstOrDefault(f => f.Name == rightFile.Name);
