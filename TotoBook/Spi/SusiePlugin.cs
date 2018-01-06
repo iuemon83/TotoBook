@@ -207,7 +207,6 @@ namespace TotoBook.Spi
 
         public IEnumerable<FileInfo> GetArchiveInfo(string filePath)
         {
-            var buf = File.ReadAllBytes(filePath);
             var isSucceeded = this.getArchiveInfo(filePath, 0, InputFlag.Disk, out IntPtr ptr);
             if (isSucceeded != 0) return null;
 
