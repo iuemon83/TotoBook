@@ -332,7 +332,7 @@ namespace TotoBook.ViewModel
             }
             else
             {
-                this.Navigate(parent);
+                this.SelectFileListItemCommand(parent);
             }
 
             this.SelectedFileInfo = this.FileInfoList.FirstOrDefault(f => f.Name == selectItem.Name);
