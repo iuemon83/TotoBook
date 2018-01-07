@@ -58,7 +58,7 @@
                         </Style>
                     </TreeView.Resources>
                     <TreeView.ItemTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type viewModels:FileInfoViewModel}" ItemsSource="{Binding Children}">
+                        <HierarchicalDataTemplate DataType="{x:Type viewModels:IFileTreeItemViewModel}" ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="{Binding Icon}"></Image>
                                 <TextBlock Text="{Binding Name}"/>
