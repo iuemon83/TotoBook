@@ -386,6 +386,7 @@ namespace TotoBook.ViewModel
             var targetNode = candidates?.FirstOrDefault(t => t.Name.ToLower() == fileInfo.Name.ToLower());
             if (targetNode != null)
             {
+                targetNode.IsSelected = false;
                 targetNode.IsSelected = true;
                 return true;
             }

@@ -39,6 +39,6 @@ namespace TotoBook
         /// <summary>
         /// 自動ページ送りの感覚を取得します。（秒）
         /// </summary>
-        public int AutoPagerInterval { get; private set; } = 2;
+        public double AutoPagerInterval { get; set; } = 2;
     }
 }
