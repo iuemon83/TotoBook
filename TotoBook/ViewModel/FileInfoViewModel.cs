@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
+using TotoBook.Spi;
 
 namespace TotoBook.ViewModel
 {
@@ -244,7 +245,7 @@ namespace TotoBook.ViewModel
 
             switch (source)
             {
-                case FileInfo f:
+                case System.IO.FileInfo f:
                     this.Type = "";
                     this.Size = f.Length.ToString();
                     this.Parent = f.Directory == null
@@ -262,29 +263,41 @@ namespace TotoBook.ViewModel
             }
         }
 
-        public FileInfoViewModel(Spi.FileInfo source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
+        public FileInfoViewModel(ArchiveItem source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
         {
             this.mainWindowViewModel = mainWindowViewModel;
             this.IsExpanded = false;
             this.Add(Dummy);
 
-            this.fileInfo = source;
-            this.FullName = source.FileName;
-            this.Name = source.FileName;
-            this.LastUpdateDate = source.TimeStamp.ToString();
+            this.fileInfo = source.FileInfo;
+            this.FullName = this.fileInfo.FileName;
+            this.Name = this.fileInfo.FileName;
+            this.LastUpdateDate = this.fileInfo.TimeStamp.ToString();
             this.Type = "";
-            this.Size = source.FileSize.ToString();
-            var extension = Path.GetExtension(source.FileName).ToLower();
-
-            this.FileType = (string.IsNullOrEmpty(extension) || ApplicationSettings.Instance.ArchiveExtensions.Contains(extension))
-                ? FileInfoType.ArchivedDirectory
-                : ApplicationSettings.Instance.FileExtensions.Contains(extension)
-                    ? FileInfoType.File
-                    : FileInfoType.Unknown;
-
+            this.Size = this.fileInfo.FileSize.ToString();
             this.Parent = parent;
-
             this._archiveParent = archiveParent;
+
+            switch (source.Type)
+            {
+                case ArchiveItem.ArchiveItemType.Directory:
+                    this.FileType = FileInfoType.ArchivedDirectory;
+                    break;
+
+                case ArchiveItem.ArchiveItemType.File:
+                    var extension = Path.GetExtension(this.fileInfo.FileName).ToLower();
+
+                    this.FileType = ApplicationSettings.Instance.ArchiveExtensions.Contains(extension)
+                        ? FileInfoType.ArchivedDirectory
+                        : ApplicationSettings.Instance.FileExtensions.Contains(extension)
+                            ? FileInfoType.File
+                            : FileInfoType.Unknown;
+                    break;
+            }
+
+            this._archiveChildren = source.Children
+                .Select(c => new FileInfoViewModel(c, mainWindowViewModel, this, archiveParent))
+                .ToArray();
         }
 
         /// <summary>
@@ -356,7 +369,8 @@ namespace TotoBook.ViewModel
             {
                 case FileInfoType.Archive:
                     var fileInfoList = Spi.SpiManager.GetArchiveInfo(this.FullName).ToArray();
-                    return this.GetArchivedFileList(fileInfoList, this);
+                    return this.GetArchiveItemList(fileInfoList)
+                        .Select(a => new FileInfoViewModel(a, this.mainWindowViewModel, this, this));
 
                 case FileInfoType.Directory:
                     try
@@ -385,20 +399,34 @@ namespace TotoBook.ViewModel
         /// <param name="source">アーカイブファイルを表すFileInfo インスタンス</param>
         /// <param name="parent">source の親要素</param>
         /// <returns></returns>
-        private IEnumerable<FileInfoViewModel> GetArchivedFileList(IEnumerable<Spi.FileInfo> source, FileInfoViewModel parent)
+        private IEnumerable<ArchiveItem> GetArchiveItemList(IEnumerable<Spi.FileInfo> source)
         {
             var sourceArray = source.ToArray();
-            var nestedArchiveList = sourceArray
+            var archivedDirectoryList = sourceArray
                 .GroupBy(f => f.Path.Split(Path.DirectorySeparatorChar)[0]);
 
-            return nestedArchiveList
+            return archivedDirectoryList
                 .SelectMany(g =>
                 {
                     // アーカイブファイル内で直下に置かれているファイル
-                    if (string.IsNullOrEmpty(g.Key)) return g.Select(f => new FileInfoViewModel(f, this.mainWindowViewModel, parent, this));
+                    if (string.IsNullOrEmpty(g.Key))
+                    {
+                        return g.Select(f => new ArchiveItem()
+                        {
+                            Type = ArchiveItem.ArchiveItemType.File,
+                            Name = f.FileName,
+                            FileInfo = f,
+                        });
+                    }
 
-                    // 以下はアーカイブファイル内で入れ子になっているもの
-                    var archiveFileInfo = new Spi.FileInfo()
+                    var children = this.GetArchiveItemList(g.Select(f =>
+                    {
+                        f.Path = f.Path.Replace(g.Key + Path.DirectorySeparatorChar, "");
+                        return f;
+                    }))
+                    .ToArray();
+
+                    var fileInfo = new Spi.FileInfo()
                     {
                         FileName = g.Key,
                         Path = g.Key,
@@ -410,19 +438,15 @@ namespace TotoBook.ViewModel
                         TimeStamp = 0,
                     };
 
-                    var archive = new FileInfoViewModel(archiveFileInfo, this.mainWindowViewModel, parent, this);
+                    var archivedDirectory = new ArchiveItem()
+                    {
+                        Type = ArchiveItem.ArchiveItemType.Directory,
+                        Name = g.Key,
+                        FileInfo = fileInfo,
+                        Children = children,
+                    };
 
-                    var children = this.GetArchivedFileList(
-                        g.Select(f =>
-                        {
-                            f.Path = f.Path.Replace(g.Key + Path.DirectorySeparatorChar, "");
-                            return f;
-                        }),
-                        archive);
-
-                    archive._archiveChildren = children.ToArray();
-
-                    return new[] { archive };
+                    return new[] { archivedDirectory };
                 });
         }
     }
