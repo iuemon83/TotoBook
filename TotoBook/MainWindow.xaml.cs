@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using TotoBook.View;
 using TotoBook.ViewModel;
 
 namespace TotoBook
@@ -388,6 +389,11 @@ namespace TotoBook
             //ソートアイコン表示
             var clm = this.FileList.Columns.First(c => c.SortMemberPath == e.Column.SortMemberPath);
             clm.SortDirection = newDir;
+        }
+
+        private void PreferenceMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            new PreferenceDialog().ShowDialog();
         }
     }
 }

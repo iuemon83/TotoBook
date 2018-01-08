@@ -94,7 +94,11 @@
     <Compile Include="Spi\SusiePlugin.cs" />
     <Compile Include="Spi\SusiePluginType.cs" />
     <Compile Include="Spi\Win32.cs" />
+    <Compile Include="ViewModel\PreferenceDialogViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
+    <Compile Include="View\PreferenceDialog.xaml.cs">
+      <DependentUpon>PreferenceDialog.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApplicationSettings.cs" />
@@ -137,6 +141,10 @@
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\PreferenceDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup />
