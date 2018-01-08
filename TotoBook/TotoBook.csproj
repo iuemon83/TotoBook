@@ -85,6 +85,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Spi\ArchiveItem.cs" />
     <Compile Include="ViewModel\FileNameComparer.cs" />
     <Compile Include="Spi\FileInfo.cs" />
     <Compile Include="Spi\InputFlag.cs" />
