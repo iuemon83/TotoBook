@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -126,15 +127,15 @@ namespace TotoBook.ViewModel
             {
                 if (this.icon == null)
                 {
-                    this.icon = GetIconPath(this.fileSystemInfo);
+                    this.icon = GetIconPath(this.FileSystemInfo);
                 }
                 return this.icon;
             }
             set { this.icon = value; }
         }
 
-        private FileSystemInfo fileSystemInfo { get; set; }
-        private Spi.FileInfo fileInfo { get; set; }
+        private FileSystemInfo FileSystemInfo { get; set; }
+        private ArchiveEntry ArchiveEntry { get; set; }
 
         public FileInfoType FileType { get; set; }
 
@@ -214,8 +215,8 @@ namespace TotoBook.ViewModel
             }
         }
 
-        private FileInfoViewModel _archiveParent = null;
-        private FileInfoViewModel[] _archiveChildren;
+        private readonly FileInfoViewModel archiveParent = null;
+        private readonly FileInfoViewModel[] archiveChildren;
 
         private FileInfoViewModel()
         {
@@ -231,7 +232,7 @@ namespace TotoBook.ViewModel
             this.IsExpanded = false;
             this.Add(Dummy);
 
-            this.fileSystemInfo = source;
+            this.FileSystemInfo = source;
             this.FullName = source.FullName;
             this.Name = source.Name;
             this.LastUpdateDate = source.LastWriteTime.ToString();
@@ -263,20 +264,52 @@ namespace TotoBook.ViewModel
             }
         }
 
+        public FileInfoViewModel(ZipArchiveEntry source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
+        {
+            this.mainWindowViewModel = mainWindowViewModel;
+            this.IsExpanded = false;
+            this.Add(Dummy);
+
+            this.ArchiveEntry = new ArchiveEntry()
+            {
+                FullName = source.FullName,
+                FileName = source.Name,
+                FileSize = source.Length,
+                TimeStamp = source.LastWriteTime.Ticks
+            };
+            this.FullName = this.ArchiveEntry.FullName;
+            this.Name = this.ArchiveEntry.FileName;
+            this.LastUpdateDate = this.ArchiveEntry.TimeStamp.ToString();
+            this.Type = "";
+            this.Size = this.ArchiveEntry.FileSize.ToString();
+            this.Parent = parent;
+            this.archiveParent = archiveParent;
+
+            var extension = Path.GetExtension(this.ArchiveEntry.FileName).ToLower();
+            this.FileType = ApplicationSettings.Instance.FileExtensions.Contains(extension)
+                ? FileInfoType.File
+                : FileInfoType.Unknown;
+        }
         public FileInfoViewModel(ArchiveItem source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
         {
             this.mainWindowViewModel = mainWindowViewModel;
             this.IsExpanded = false;
             this.Add(Dummy);
 
-            this.fileInfo = source.FileInfo;
-            this.FullName = this.fileInfo.FileName;
-            this.Name = this.fileInfo.FileName;
-            this.LastUpdateDate = this.fileInfo.TimeStamp.ToString();
+            this.ArchiveEntry = new ArchiveEntry()
+            {
+                FullName = source.FileInfo.FileName,
+                FileName = source.FileInfo.FileName,
+                FileSize = source.FileInfo.FileSize,
+                TimeStamp = source.FileInfo.TimeStamp
+            };
+            this.FullName = this.ArchiveEntry.FileName;
+            this.Name = this.ArchiveEntry.FileName;
+            this.LastUpdateDate = this.ArchiveEntry.TimeStamp.ToString();
             this.Type = "";
-            this.Size = this.fileInfo.FileSize.ToString();
+            this.Size = this.ArchiveEntry.FileSize.ToString();
             this.Parent = parent;
-            this._archiveParent = archiveParent;
+            this.archiveParent = archiveParent;
 
             switch (source.Type)
             {
@@ -285,7 +318,7 @@ namespace TotoBook.ViewModel
                     break;
 
                 case ArchiveItem.ArchiveItemType.File:
-                    var extension = Path.GetExtension(this.fileInfo.FileName).ToLower();
+                    var extension = Path.GetExtension(this.ArchiveEntry.FileName).ToLower();
 
                     this.FileType = ApplicationSettings.Instance.ArchiveExtensions.Contains(extension)
                         ? FileInfoType.ArchivedDirectory
@@ -295,7 +328,7 @@ namespace TotoBook.ViewModel
                     break;
             }
 
-            this._archiveChildren = source.Children
+            this.archiveChildren = source.Children
                 .Select(c => new FileInfoViewModel(c, mainWindowViewModel, this, archiveParent))
                 .ToArray();
         }
@@ -315,9 +348,9 @@ namespace TotoBook.ViewModel
         {
             this.Children?.Clear();
 
-            if (this.fileSystemInfo == null) return;
+            if (this.FileSystemInfo == null) return;
 
-            var directory = this.fileSystemInfo as DirectoryInfo;
+            var directory = this.FileSystemInfo as DirectoryInfo;
             if (directory == null) return;
 
             directory.GetDirectories()
@@ -334,18 +367,53 @@ namespace TotoBook.ViewModel
         /// <returns></returns>
         public Stream GetFileStream()
         {
-            if (this.fileSystemInfo != null)
+            if (this.FileSystemInfo == null)
             {
-                //return Spi.SpiManager.GetPictureStream(this.fileSystemInfo.FullName);
-                return File.OpenRead(this.fileSystemInfo.FullName);
+                return Archive.GetFileStream(this.archiveParent, this.ArchiveEntry);
+
+                //switch (Path.GetExtension(this._archiveParent.FullName).ToLower())
+                //{
+                //    case ".zip":
+                //        using (var a = ZipFile.OpenRead(this._archiveParent.FullName))
+                //        {
+                //            var entry = a.GetEntry(this.fileInfo.FileName);
+                //            if (entry == null)
+                //            {
+                //                return null;
+                //            }
+                //            else
+                //            {
+                //                var ms = new MemoryStream();
+                //                using (var fs = entry.Open())
+                //                {
+                //                    fs.CopyTo(ms);
+                //                }
+
+                //                ms.Seek(0, SeekOrigin.Begin);
+
+                //                return ms;
+                //            }
+                //        }
+
+                //    default:
+                //        var bytes = Spi.SpiManager.GetFile(this._archiveParent.FullName, this.fileInfo.Position);
+
+                //        return new MemoryStream(bytes);
+                //        //return SpiManager.GetPictureStream(fileInfo.FileName, bytes);
+                //}
             }
             else
             {
-                var bytes = Spi.SpiManager.GetFile(this._archiveParent.FullName, this.fileInfo);
+                //return Spi.SpiManager.GetPictureStream(this.fileSystemInfo.FullName);
 
-                return new MemoryStream(bytes);
+                var ms = new MemoryStream();
+                using (var fs = File.OpenRead(this.FileSystemInfo.FullName))
+                {
+                    fs.CopyTo(ms);
+                }
+                ms.Seek(0, SeekOrigin.Begin);
 
-                //return SpiManager.GetPictureStream(fileInfo.FileName, bytes);
+                return ms;
             }
         }
 
@@ -373,9 +441,39 @@ namespace TotoBook.ViewModel
             switch (this.FileType)
             {
                 case FileInfoType.Archive:
-                    var fileInfoList = Spi.SpiManager.GetArchiveInfo(this.FullName).ToArray();
-                    return this.GetArchiveItemList(fileInfoList)
-                        .Select(a => new FileInfoViewModel(a, this.mainWindowViewModel, this, this));
+                    //switch (Path.GetExtension(this.Name).ToLower())
+                    //{
+                    //    case ".zip":
+                    //        //ZIP書庫を開く
+                    //        using (var a = ZipFile.OpenRead(this.FullName))
+                    //        //Encodingを指定する場合は、次のようにする
+                    //        //using (ZipArchive a = ZipFile.Open(@"C:\test\1.zip",
+                    //        //    ZipArchiveMode.Read,
+                    //        //    System.Text.Encoding.GetEncoding("shift_jis")))
+                    //        {
+                    //            //書庫内のファイルとディレクトリを列挙する
+                    //            //foreach (var e in a.Entries)
+                    //            //{
+                    //            //    Console.WriteLine("名前       : {0}", e.Name);
+                    //            //    //ディレクトリ付きのファイル名
+                    //            //    Console.WriteLine("フルパス   : {0}", e.FullName);
+                    //            //    Console.WriteLine("サイズ     : {0}", e.Length);
+                    //            //    Console.WriteLine("圧縮サイズ : {0}", e.CompressedLength);
+                    //            //    Console.WriteLine("更新日時   : {0}", e.LastWriteTime);
+                    //            //}
+
+                    //            return a.Entries
+                    //                .Select(e => new FileInfoViewModel(e, this.mainWindowViewModel, this, this))
+                    //                .ToArray();
+                    //        }
+
+                    //    default:
+                    //        var fileInfoList = Spi.SpiManager.GetArchiveInfo(this.FullName).ToArray();
+                    //        return this.GetArchiveItemList(fileInfoList)
+                    //            .Select(a => new FileInfoViewModel(a, this.mainWindowViewModel, this, this));
+                    //}
+
+                    return Archive.GetChildrenForList(this.FullName, this.mainWindowViewModel, this, this);
 
                 case FileInfoType.Directory:
                     try
@@ -391,68 +489,68 @@ namespace TotoBook.ViewModel
                     }
 
                 case FileInfoType.ArchivedDirectory:
-                    return this._archiveChildren;
+                    return this.archiveChildren;
 
                 default:
                     return new FileInfoViewModel[0];
             }
         }
 
-        /// <summary>
-        /// アーカイブ内のファイルの一覧を取得します。
-        /// </summary>
-        /// <param name="source">アーカイブファイルを表すFileInfo インスタンス</param>
-        /// <param name="parent">source の親要素</param>
-        /// <returns></returns>
-        private IEnumerable<ArchiveItem> GetArchiveItemList(IEnumerable<Spi.FileInfo> source)
-        {
-            var sourceArray = source.ToArray();
-            var archivedDirectoryList = sourceArray
-                .GroupBy(f => f.Path.Split(Path.DirectorySeparatorChar)[0]);
+        ///// <summary>
+        ///// アーカイブ内のファイルの一覧を取得します。
+        ///// </summary>
+        ///// <param name="source">アーカイブファイルを表すFileInfo インスタンス</param>
+        ///// <param name="parent">source の親要素</param>
+        ///// <returns></returns>
+        //private IEnumerable<ArchiveItem> GetArchiveItemList(IEnumerable<Spi.FileInfo> source)
+        //{
+        //    var sourceArray = source.ToArray();
+        //    var archivedDirectoryList = sourceArray
+        //        .GroupBy(f => f.Path.Split(Path.DirectorySeparatorChar)[0]);
 
-            return archivedDirectoryList
-                .SelectMany(g =>
-                {
-                    // アーカイブファイル内で直下に置かれているファイル
-                    if (string.IsNullOrEmpty(g.Key))
-                    {
-                        return g.Select(f => new ArchiveItem()
-                        {
-                            Type = ArchiveItem.ArchiveItemType.File,
-                            Name = f.FileName,
-                            FileInfo = f,
-                        });
-                    }
+        //    return archivedDirectoryList
+        //        .SelectMany(g =>
+        //        {
+        //            // アーカイブファイル内で直下に置かれているファイル
+        //            if (string.IsNullOrEmpty(g.Key))
+        //            {
+        //                return g.Select(f => new ArchiveItem()
+        //                {
+        //                    Type = ArchiveItem.ArchiveItemType.File,
+        //                    Name = f.FileName,
+        //                    FileInfo = f,
+        //                });
+        //            }
 
-                    var children = this.GetArchiveItemList(g.Select(f =>
-                    {
-                        f.Path = f.Path.Replace(g.Key + Path.DirectorySeparatorChar, "");
-                        return f;
-                    }))
-                    .ToArray();
+        //            var children = this.GetArchiveItemList(g.Select(f =>
+        //            {
+        //                f.Path = f.Path.Replace(g.Key + Path.DirectorySeparatorChar, "");
+        //                return f;
+        //            }))
+        //            .ToArray();
 
-                    var fileInfo = new Spi.FileInfo()
-                    {
-                        FileName = g.Key,
-                        Path = g.Key,
-                        CompSize = 0,
-                        CRC = 0,
-                        FileSize = 0,
-                        Method = "",
-                        Position = 0,
-                        TimeStamp = 0,
-                    };
+        //            var fileInfo = new Spi.FileInfo()
+        //            {
+        //                FileName = g.Key,
+        //                Path = g.Key,
+        //                CompSize = 0,
+        //                CRC = 0,
+        //                FileSize = 0,
+        //                Method = "",
+        //                Position = 0,
+        //                TimeStamp = 0,
+        //            };
 
-                    var archivedDirectory = new ArchiveItem()
-                    {
-                        Type = ArchiveItem.ArchiveItemType.Directory,
-                        Name = g.Key,
-                        FileInfo = fileInfo,
-                        Children = children,
-                    };
+        //            var archivedDirectory = new ArchiveItem()
+        //            {
+        //                Type = ArchiveItem.ArchiveItemType.Directory,
+        //                Name = g.Key,
+        //                FileInfo = fileInfo,
+        //                Children = children,
+        //            };
 
-                    return new[] { archivedDirectory };
-                });
-        }
+        //            return new[] { archivedDirectory };
+        //        });
+        //}
     }
 }
