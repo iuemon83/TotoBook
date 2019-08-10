@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows;
 using TotoBook.ViewModel;
 
 namespace TotoBook.View
@@ -30,6 +31,20 @@ namespace TotoBook.View
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void OpenPluginFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CommonOpenFileDialog()
+            {
+                IsFolderPicker = true,
+                DefaultFileName = this.viewmodel.PluginDirectoryPath,
+            };
+
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                this.viewmodel.PluginDirectoryPath = dialog.FileName;
+            }
         }
     }
 }

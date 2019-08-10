@@ -20,10 +20,21 @@
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
             </Grid.RowDefinitions>
 
-            <Label Grid.Row="0" Grid.Column="0">スライドショー</Label>
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding AutoPagerInterval}"></TextBox>
+            <Label Grid.Row="0" Grid.Column="0">プラグインの場所</Label>
+            <Grid Grid.Row="0" Grid.Column="1" Margin="0,0,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding PluginDirectoryPath}"></TextBox>
+                <Button Grid.Column="1" Click="OpenPluginFolderButton_Click">参照...</Button>
+            </Grid>
+            
+            <Label Grid.Row="1" Grid.Column="0">スライドショー</Label>
+            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,5" Text="{Binding AutoPagerInterval}"></TextBox>
         </Grid>
     </DockPanel>
 </Window>

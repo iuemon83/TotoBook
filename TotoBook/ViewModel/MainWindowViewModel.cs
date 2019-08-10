@@ -184,6 +184,8 @@ namespace TotoBook.ViewModel
         /// </summary>
         public MainWindowViewModel()
         {
+            ApplicationSettings.LoadSettingsFromFile();
+
             this._currentSort = new SortDescription("Name", ListSortDirection.Ascending);
 
             this.autoPagerTimer = new AutoPagerTimer(() => this.ToNextScene());
@@ -660,6 +662,36 @@ namespace TotoBook.ViewModel
         {
             this.Navigate(file);
             this.historyService.AddNewCurrent(file);
+        }
+
+        public void DeleteFileListItemCommand(FileInfoViewModel file, Func<bool> confirm)
+        {
+            var deleteIndex = this.FileInfoList.IndexOf(file);
+            var nextSelectIndex = deleteIndex == this.FileInfoList.Count - 1
+                ? deleteIndex - 1
+                : deleteIndex;
+
+            if (Directory.Exists(file.FullName))
+            {
+                // ディレクトリの場合
+                if (!confirm()) return;
+
+                Directory.Delete(file.FullName, true);
+                this.FileInfoList.Remove(file);
+            }
+
+            if (File.Exists(file.FullName))
+            {
+                // ファイルの場合
+                if (!confirm()) return;
+
+                File.Delete(file.FullName);
+                this.FileInfoList.Remove(file);
+            }
+
+            if (this.FileInfoList.IsEmpty()) return;
+
+            this.SelectedFileInfo = this.FileInfoList[nextSelectIndex];
         }
 
         /// <summary>

@@ -70,11 +70,22 @@ namespace TotoBook
             switch (e.Key)
             {
                 case Key.Enter:
-                    var dataGridRow = (DataGridRow)sender;
-                    var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
-                    this.SelectFileListItem(fileInfoViewModel);
-                    e.Handled = true;
-                    break;
+                    {
+                        var dataGridRow = (DataGridRow)sender;
+                        var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
+                        this.SelectFileListItem(fileInfoViewModel);
+                        e.Handled = true;
+                        break;
+                    }
+
+                case Key.Delete:
+                    {
+                        var dataGridRow = (DataGridRow)sender;
+                        var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
+                        this.DeleteFileListItem(fileInfoViewModel);
+                        e.Handled = true;
+                        break;
+                    }
             }
         }
 
@@ -96,6 +107,21 @@ namespace TotoBook
             {
                 this.SetFocusFileList();
             }
+        }
+
+        /// <summary>
+        /// ファイル一覧で選択中のファイルを削除します。
+        /// </summary>
+        /// <param name="fileInfoViewModel"></param>
+        private void DeleteFileListItem(FileInfoViewModel fileInfoViewModel)
+        {
+            this.ViewModel.DeleteFileListItemCommand(fileInfoViewModel, () =>
+                MessageBox.Show($"「{fileInfoViewModel.Name}」を削除します。よろしいですか？", "ファイルの削除", MessageBoxButton.YesNo) == MessageBoxResult.Yes
+            );
+
+
+
+            this.SetFocusFileList();
         }
 
         /// <summary>
@@ -393,7 +419,11 @@ namespace TotoBook
 
         private void PreferenceMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            new PreferenceDialog().ShowDialog();
+            new PreferenceDialog()
+            {
+                Owner = this
+            }
+            .ShowDialog();
         }
     }
 }

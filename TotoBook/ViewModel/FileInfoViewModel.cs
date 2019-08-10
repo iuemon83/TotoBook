@@ -97,7 +97,7 @@ namespace TotoBook.ViewModel
         /// <summary>
         /// メインウィンドウのビューモデル
         /// </summary>
-        private MainWindowViewModel mainWindowViewModel;
+        private readonly MainWindowViewModel mainWindowViewModel;
 
         public string FullName { get; set; }
         public string Name { get; set; }
@@ -336,11 +336,16 @@ namespace TotoBook.ViewModel
         {
             if (this.fileSystemInfo != null)
             {
-                return Spi.SpiManager.GetPictureStream(this.fileSystemInfo.FullName);
+                //return Spi.SpiManager.GetPictureStream(this.fileSystemInfo.FullName);
+                return File.OpenRead(this.fileSystemInfo.FullName);
             }
             else
             {
-                return Spi.SpiManager.GetFile(this._archiveParent.FullName, this.fileInfo);
+                var bytes = Spi.SpiManager.GetFile(this._archiveParent.FullName, this.fileInfo);
+
+                return new MemoryStream(bytes);
+
+                //return SpiManager.GetPictureStream(fileInfo.FileName, bytes);
             }
         }
 
