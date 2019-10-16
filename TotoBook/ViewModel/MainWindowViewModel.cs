@@ -582,7 +582,7 @@ namespace TotoBook.ViewModel
                 : Math.Min(rightImage.Width, leftImage.Width);
 
             var rightRectHeight = rightImage.Height * rectWidth / rightImage.Width;
-            this.RightImageRect = new Rect(rectWidth, 150, rectWidth, rightRectHeight);
+            this.RightImageRect = new Rect(rectWidth, 0, rectWidth, rightRectHeight);
             this.RightImageSource = rightImage;
 
             if (leftImage == null)
@@ -592,7 +592,7 @@ namespace TotoBook.ViewModel
             else
             {
                 var leftRectHeight = leftImage.Height * rectWidth / leftImage.Width;
-                this.LeftImageRect = new Rect(0, 150, rectWidth, leftRectHeight);
+                this.LeftImageRect = new Rect(0, 0, rectWidth, leftRectHeight);
             }
 
             this.LeftImageSource = leftImage;
