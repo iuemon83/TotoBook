@@ -3,13 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using TotoBook.Spi;
 
 namespace TotoBook.ViewModel
 {
@@ -46,13 +44,11 @@ namespace TotoBook.ViewModel
                     Spi.Win32.SHGetFileInfo($"x{extension}", 0, out shinfo, (uint)Marshal.SizeOf(typeof(Spi.Win32.SHFILEINFO)), Spi.Win32.SHGFI_ICON | Spi.Win32.SHGFI_SMALLICON | Spi.Win32.SHGFI_USEFILEATTRIBUTES);
                     if (shinfo.hIcon == IntPtr.Zero) return null;
 
-                    using (var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon))
-                    {
-                        var iconSource = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                        IconPathCache.Add(extension, iconSource);
+                    using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
+                    var iconSource = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                    IconPathCache.Add(extension, iconSource);
 
-                        return iconSource;
-                    }
+                    return iconSource;
                 }
                 finally
                 {
@@ -72,12 +68,10 @@ namespace TotoBook.ViewModel
                 Spi.Win32.SHGetFileInfo(directoryInfo.FullName, 0, out shinfo, (uint)Marshal.SizeOf(typeof(Spi.Win32.SHFILEINFO)), Spi.Win32.SHGFI_ICON | Spi.Win32.SHGFI_SMALLICON);
                 if (shinfo.hIcon == IntPtr.Zero) return null;
 
-                using (var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon))
-                {
-                    var iconSource = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                    if (directoryInfo.Attributes == FileAttributes.Directory) IconPathCache.Add("", iconSource);
-                    return iconSource;
-                }
+                using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
+                var iconSource = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                if (directoryInfo.Attributes == FileAttributes.Directory) IconPathCache.Add("", iconSource);
+                return iconSource;
             }
             finally
             {
@@ -135,7 +129,7 @@ namespace TotoBook.ViewModel
         }
 
         private FileSystemInfo FileSystemInfo { get; set; }
-        private ArchiveEntry ArchiveEntry { get; set; }
+        private ArchiveItem ArchiveItem { get; set; }
 
         public FileInfoType FileType { get; set; }
 
@@ -215,11 +209,11 @@ namespace TotoBook.ViewModel
             }
         }
 
-        private readonly FileInfoViewModel archiveParent = null;
         private readonly FileInfoViewModel[] archiveChildren;
 
         private FileInfoViewModel()
         {
+
         }
 
         /// <summary>
@@ -264,52 +258,53 @@ namespace TotoBook.ViewModel
             }
         }
 
-        public FileInfoViewModel(ZipArchiveEntry source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
+        //public FileInfoViewModel(IEntry source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
+        //{
+        //    this.mainWindowViewModel = mainWindowViewModel;
+        //    this.IsExpanded = false;
+        //    this.Add(Dummy);
+
+        //    this.ArchiveItem = new ArchiveItem()
+        //    {
+        //        FullName = source.Key,
+        //        FileName = source.Key,
+        //        FileSize = source.Size,
+        //        TimeStamp = source.CreatedTime?.Ticks ?? 0
+        //    };
+        //    this.FullName = this.ArchiveItem.FullName;
+        //    this.Name = this.ArchiveItem.FileName;
+        //    this.LastUpdateDate = this.ArchiveItem.TimeStamp.ToString();
+        //    this.Type = "";
+        //    this.Size = this.ArchiveItem.FileSize.ToString();
+        //    this.Parent = parent;
+        //    this.archiveParent = archiveParent;
+
+        //    var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLower();
+        //    this.FileType = ApplicationSettings.Instance.FileExtensions.Contains(extension)
+        //        ? FileInfoType.File
+        //        : FileInfoType.Unknown;
+        //}
+
+        public FileInfoViewModel(ArchiveItem source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent)
         {
             this.mainWindowViewModel = mainWindowViewModel;
             this.IsExpanded = false;
             this.Add(Dummy);
 
-            this.ArchiveEntry = new ArchiveEntry()
-            {
-                FullName = source.FullName,
-                FileName = source.Name,
-                FileSize = source.Length,
-                TimeStamp = source.LastWriteTime.Ticks
-            };
-            this.FullName = this.ArchiveEntry.FullName;
-            this.Name = this.ArchiveEntry.FileName;
-            this.LastUpdateDate = this.ArchiveEntry.TimeStamp.ToString();
+            //this.ArchiveItem = new ArchiveItem()
+            //{
+            //    FullName = source.FileInfo.FileName,
+            //    FileName = source.FileInfo.FileName,
+            //    FileSize = source.FileInfo.FileSize,
+            //    TimeStamp = source.FileInfo.TimeStamp
+            //};
+            this.ArchiveItem = source;
+            this.FullName = this.ArchiveItem.FileName;
+            this.Name = this.ArchiveItem.FileName;
+            this.LastUpdateDate = this.ArchiveItem.TimeStamp.ToString();
             this.Type = "";
-            this.Size = this.ArchiveEntry.FileSize.ToString();
+            this.Size = this.ArchiveItem.FileSize.ToString();
             this.Parent = parent;
-            this.archiveParent = archiveParent;
-
-            var extension = Path.GetExtension(this.ArchiveEntry.FileName).ToLower();
-            this.FileType = ApplicationSettings.Instance.FileExtensions.Contains(extension)
-                ? FileInfoType.File
-                : FileInfoType.Unknown;
-        }
-        public FileInfoViewModel(ArchiveItem source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent, FileInfoViewModel archiveParent)
-        {
-            this.mainWindowViewModel = mainWindowViewModel;
-            this.IsExpanded = false;
-            this.Add(Dummy);
-
-            this.ArchiveEntry = new ArchiveEntry()
-            {
-                FullName = source.FileInfo.FileName,
-                FileName = source.FileInfo.FileName,
-                FileSize = source.FileInfo.FileSize,
-                TimeStamp = source.FileInfo.TimeStamp
-            };
-            this.FullName = this.ArchiveEntry.FileName;
-            this.Name = this.ArchiveEntry.FileName;
-            this.LastUpdateDate = this.ArchiveEntry.TimeStamp.ToString();
-            this.Type = "";
-            this.Size = this.ArchiveEntry.FileSize.ToString();
-            this.Parent = parent;
-            this.archiveParent = archiveParent;
 
             switch (source.Type)
             {
@@ -318,7 +313,7 @@ namespace TotoBook.ViewModel
                     break;
 
                 case ArchiveItem.ArchiveItemType.File:
-                    var extension = Path.GetExtension(this.ArchiveEntry.FileName).ToLower();
+                    var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLower();
 
                     this.FileType = ApplicationSettings.Instance.ArchiveExtensions.Contains(extension)
                         ? FileInfoType.ArchivedDirectory
@@ -329,7 +324,7 @@ namespace TotoBook.ViewModel
             }
 
             this.archiveChildren = source.Children
-                .Select(c => new FileInfoViewModel(c, mainWindowViewModel, this, archiveParent))
+                .Select(c => new FileInfoViewModel(c, mainWindowViewModel, this))
                 .ToArray();
         }
 
@@ -350,8 +345,7 @@ namespace TotoBook.ViewModel
 
             if (this.FileSystemInfo == null) return;
 
-            var directory = this.FileSystemInfo as DirectoryInfo;
-            if (directory == null) return;
+            if (!(this.FileSystemInfo is DirectoryInfo directory)) return;
 
             directory.GetDirectories()
                 .Where(d => !d.Attributes.HasFlag(FileAttributes.System))
@@ -369,7 +363,9 @@ namespace TotoBook.ViewModel
         {
             if (this.FileSystemInfo == null)
             {
-                return Archive.GetFileStream(this.archiveParent, this.ArchiveEntry);
+                return this.ArchiveItem.CreateStream();
+
+                //return Archive.GetFileStream(this.archiveParent, this.ArchiveItem);
 
                 //switch (Path.GetExtension(this._archiveParent.FullName).ToLower())
                 //{
@@ -473,7 +469,7 @@ namespace TotoBook.ViewModel
                     //            .Select(a => new FileInfoViewModel(a, this.mainWindowViewModel, this, this));
                     //}
 
-                    return Archive.GetChildrenForList(this.FullName, this.mainWindowViewModel, this, this);
+                    return Archive.GetChildrenForList(this.FullName, this.mainWindowViewModel, this);
 
                 case FileInfoType.Directory:
                     try

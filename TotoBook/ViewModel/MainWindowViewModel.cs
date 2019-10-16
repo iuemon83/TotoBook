@@ -1,4 +1,5 @@
 ﻿using GalaSoft.MvvmLight;
+using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +17,8 @@ namespace TotoBook.ViewModel
     /// </summary>
     public class MainWindowViewModel : ViewModelBase
     {
+        public static IArchive CurrentArchive;
+
         public event EventHandler<EventArgs> ScrollFileListToSelectedItem;
 
         /// <summary>
@@ -200,6 +203,13 @@ namespace TotoBook.ViewModel
                 {
                     this.FileTreeRoot.Add(root);
                 });
+        }
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
+
+            MainWindowViewModel.CurrentArchive?.Dispose();
         }
 
         /// <summary>
@@ -402,22 +412,22 @@ namespace TotoBook.ViewModel
         /// ディレクトリを指定した場合は、そこに移動します。
         /// ファイルを指定した場合は、そのファイルを表示します。
         /// </summary>
-        /// <param name="fileInfo">対象のディレクトリまたはファイル</param>
-        public void Navigate(FileInfoViewModel fileInfo)
+        /// <param name="nextFileInfo">移動先のディレクトリまたはファイル</param>
+        public void Navigate(FileInfoViewModel nextFileInfo)
         {
-            switch (fileInfo.FileType)
+            switch (nextFileInfo.FileType)
             {
                 case FileInfoViewModel.FileInfoType.File:
-                    this.NavigateToPhotoFile(fileInfo);
+                    this.NavigateToPhotoFile(nextFileInfo);
                     break;
 
                 case FileInfoViewModel.FileInfoType.Archive:
                 case FileInfoViewModel.FileInfoType.ArchivedDirectory:
-                    this.NavigateToArchiveFile(fileInfo);
+                    this.NavigateToArchiveFile(nextFileInfo);
                     break;
 
                 case FileInfoViewModel.FileInfoType.Directory:
-                    this.NavigateToDirectory(fileInfo);
+                    this.NavigateToDirectory(nextFileInfo);
                     break;
 
                 default:
@@ -479,21 +489,19 @@ namespace TotoBook.ViewModel
                 {
                     var dist2 = this.GetNextFile(dist);
 
-                    using (var stream2 = dist2.GetFileStream())
-                    {
-                        var bitmapImage2 = new BitmapImage();
-                        bitmapImage2.BeginInit();
-                        bitmapImage2.StreamSource = stream2;
-                        bitmapImage2.EndInit();
+                    using var stream2 = dist2.GetFileStream();
+                    var bitmapImage2 = new BitmapImage();
+                    bitmapImage2.BeginInit();
+                    bitmapImage2.StreamSource = stream2;
+                    bitmapImage2.EndInit();
 
-                        if (bitmapImage2.Width < bitmapImage2.Height)
-                        {
-                            this.DisplayImages(dist, bitmapImage1, dist2, bitmapImage2);
-                        }
-                        else
-                        {
-                            this.DisplayImages(dist, bitmapImage1, null, null);
-                        }
+                    if (bitmapImage2.Width < bitmapImage2.Height)
+                    {
+                        this.DisplayImages(dist, bitmapImage1, dist2, bitmapImage2);
+                    }
+                    else
+                    {
+                        this.DisplayImages(dist, bitmapImage1, null, null);
                     }
                 }
                 else
@@ -526,21 +534,19 @@ namespace TotoBook.ViewModel
                 {
                     var dist2 = this.GetPrevFile(dist);
 
-                    using (var stream2 = dist2.GetFileStream())
-                    {
-                        var bitmapImage2 = new BitmapImage();
-                        bitmapImage2.BeginInit();
-                        bitmapImage2.StreamSource = stream2;
-                        bitmapImage2.EndInit();
+                    using var stream2 = dist2.GetFileStream();
+                    var bitmapImage2 = new BitmapImage();
+                    bitmapImage2.BeginInit();
+                    bitmapImage2.StreamSource = stream2;
+                    bitmapImage2.EndInit();
 
-                        if (bitmapImage2.Width < bitmapImage2.Height)
-                        {
-                            this.DisplayImages(dist2, bitmapImage2, dist, bitmapImage1);
-                        }
-                        else
-                        {
-                            this.DisplayImages(dist, bitmapImage1, null, null);
-                        }
+                    if (bitmapImage2.Width < bitmapImage2.Height)
+                    {
+                        this.DisplayImages(dist2, bitmapImage2, dist, bitmapImage1);
+                    }
+                    else
+                    {
+                        this.DisplayImages(dist, bitmapImage1, null, null);
                     }
                 }
                 else
@@ -708,26 +714,14 @@ namespace TotoBook.ViewModel
 
             var isAsc = direction == ListSortDirection.Ascending;
 
-            IEnumerable<FileInfoViewModel> sortedQuery;
-
-            switch (propertyName)
+            var sortedQuery = propertyName switch
             {
-                case "Name":
-                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file, new FileNameComparer()) : FileInfoList.OrderByDescending(p => p.Name);
-                    break;
-                case "Size":
-                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file.Size) : FileInfoList.OrderByDescending(p => p.Size);
-                    break;
-                case "Type":
-                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file.Type) : FileInfoList.OrderByDescending(p => p.Type);
-                    break;
-                case "LastUpdateDate":
-                    sortedQuery = isAsc ? FileInfoList.OrderBy(file => file.LastUpdateDate) : FileInfoList.OrderByDescending(p => p.LastUpdateDate);
-                    break;
-                default:
-                    throw new ArgumentException();
-            }
-
+                "Name" => isAsc ? FileInfoList.OrderBy(file => file, new FileNameComparer()) : FileInfoList.OrderByDescending(p => p.Name),
+                "Size" => isAsc ? FileInfoList.OrderBy(file => file.Size) : FileInfoList.OrderByDescending(p => p.Size),
+                "Type" => isAsc ? FileInfoList.OrderBy(file => file.Type) : FileInfoList.OrderByDescending(p => p.Type),
+                "LastUpdateDate" => isAsc ? FileInfoList.OrderBy(file => file.LastUpdateDate) : FileInfoList.OrderByDescending(p => p.LastUpdateDate),
+                _ => throw new ArgumentException(),
+            };
             FileInfoList = new ObservableCollection<FileInfoViewModel>(sortedQuery);
 
             ////ソートアイコン表示をViewに依頼

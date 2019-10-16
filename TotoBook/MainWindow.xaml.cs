@@ -9,7 +9,7 @@ using TotoBook.ViewModel;
 namespace TotoBook
 {
     /// <summary>
-    /// MainWindow.xaml の相互作用ロジック
+    /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
