@@ -1,5 +1,4 @@
 ﻿using GalaSoft.MvvmLight;
-using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,8 +16,6 @@ namespace TotoBook.ViewModel
     /// </summary>
     public class MainWindowViewModel : ViewModelBase
     {
-        public static IArchive CurrentArchive;
-
         public event EventHandler<EventArgs> ScrollFileListToSelectedItem;
 
         /// <summary>
@@ -29,7 +26,7 @@ namespace TotoBook.ViewModel
         /// <summary>
         /// 現在表示中のディレクトリ
         /// </summary>
-        private FileInfoViewModel current = null;
+        private FileInfoViewModel currentDirectory = null;
 
         /// <summary>
         /// 表示中の右側の画像ファイル
@@ -209,7 +206,32 @@ namespace TotoBook.ViewModel
         {
             base.Cleanup();
 
-            MainWindowViewModel.CurrentArchive?.Dispose();
+            try
+            {
+                this.currentDirectory?.Cleanup();
+            }
+            catch { }
+
+            try
+            {
+                this._rightFile?.Cleanup();
+            }
+            catch { }
+
+            try
+            {
+                this._leftFile.Cleanup();
+            }
+            catch { }
+
+            foreach (var fileInfo in this.FileInfoList)
+            {
+                try
+                {
+                    fileInfo?.Cleanup();
+                }
+                catch { }
+            }
         }
 
         /// <summary>
@@ -333,10 +355,10 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void NavigateToParent()
         {
-            if (this.current == null) return;
+            if (this.currentDirectory == null) return;
 
-            var selectItem = this.current;
-            var parent = this.current.Parent;
+            var selectItem = this.currentDirectory;
+            var parent = this.currentDirectory.Parent;
 
             if (parent == null)
             {
@@ -442,13 +464,10 @@ namespace TotoBook.ViewModel
         /// <param name="dist">対象のアーカイブファイル</param>
         private void NavigateToArchiveFile(FileInfoViewModel dist)
         {
-            this.autoPagerTimer.Stop();
-            this.IsEnabledAutoPager = false;
+            if (dist.FileType != FileInfoViewModel.FileInfoType.Archive
+                && dist.FileType != FileInfoViewModel.FileInfoType.ArchivedDirectory) return;
 
-            this.current = dist;
-
-            var children = dist.GetChildrenForList();
-            this.RefreshFileList(children);
+            this.SetCurrentDirectory(dist);
         }
 
         /// <summary>
@@ -459,10 +478,16 @@ namespace TotoBook.ViewModel
         {
             if (dist.FileType != FileInfoViewModel.FileInfoType.Directory) return;
 
+            this.SetCurrentDirectory(dist);
+        }
+
+        private void SetCurrentDirectory(FileInfoViewModel dist)
+        {
             this.autoPagerTimer.Stop();
             this.IsEnabledAutoPager = false;
 
-            this.current = dist;
+            this.currentDirectory?.Cleanup();
+            this.currentDirectory = dist;
 
             var children = dist.GetChildrenForList();
             this.RefreshFileList(children);

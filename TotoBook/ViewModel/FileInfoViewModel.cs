@@ -1,4 +1,5 @@
 ﻿using GalaSoft.MvvmLight;
+using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +17,8 @@ namespace TotoBook.ViewModel
     /// </summary>
     public class FileInfoViewModel : ViewModelBase, IFileListItemViewModel, IFileTreeItemViewModel
     {
+        private IArchive currentArchive;
+
         public static FileInfoViewModel Dummy
         {
             get
@@ -328,6 +331,13 @@ namespace TotoBook.ViewModel
                 .ToArray();
         }
 
+        public override void Cleanup()
+        {
+            base.Cleanup();
+
+            this.currentArchive?.Dispose();
+        }
+
         /// <summary>
         /// 指定した要素を子要素として追加します。
         /// </summary>
@@ -469,7 +479,10 @@ namespace TotoBook.ViewModel
                     //            .Select(a => new FileInfoViewModel(a, this.mainWindowViewModel, this, this));
                     //}
 
-                    return Archive.GetChildrenForList(this.FullName, this.mainWindowViewModel, this);
+                    var (archive, children) = Archive.GetChildrenForList(this.FullName, this.mainWindowViewModel, this);
+                    this.currentArchive?.Dispose();
+                    this.currentArchive = archive;
+                    return children;
 
                 case FileInfoType.Directory:
                     try
