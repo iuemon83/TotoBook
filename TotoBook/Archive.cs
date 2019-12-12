@@ -153,13 +153,11 @@ namespace TotoBook
                     Position = 0,
                     CreateStream = () =>
                     {
-                        using (var entryStream = entry.OpenEntryStream())
-                        {
-                            var ms = new MemoryStream();
-                            entryStream.CopyTo(ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            return ms;
-                        }
+                        using var entryStream = entry.OpenEntryStream();
+                        var ms = new MemoryStream();
+                        entryStream.CopyTo(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        return ms;
                     }
                 });
 
@@ -272,13 +270,11 @@ namespace TotoBook
             var entry = MainWindowViewModel.CurrentArchive.Entries
                 .FirstOrDefault(e => e.Key == archiveItem.FullName);
 
-            using (var entryStream = entry.OpenEntryStream())
-            {
-                var ms = new MemoryStream();
-                entryStream.CopyTo(ms);
-                ms.Seek(0, SeekOrigin.Begin);
-                return ms;
-            }
+            using var entryStream = entry.OpenEntryStream();
+            var ms = new MemoryStream();
+            entryStream.CopyTo(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            return ms;
 
             //var opts = new ReaderOptions();
             //var encoding = Encoding.GetEncoding(932);
