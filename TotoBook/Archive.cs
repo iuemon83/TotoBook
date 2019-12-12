@@ -140,7 +140,8 @@ namespace TotoBook
         /// <returns></returns>
         private static IEnumerable<ArchiveItem> GetArchiveItemList(IEnumerable<IArchiveEntry> source)
         {
-            return AggregateItems(source
+            var archiveItems = source
+                .Where(entry => !entry.IsDirectory)
                 .Select(entry => new ArchiveItem()
                 {
                     Type = ArchiveItem.ArchiveItemType.File,
@@ -160,7 +161,9 @@ namespace TotoBook
                             return ms;
                         }
                     }
-                }));
+                });
+
+            return AggregateItems(archiveItems);
 
 
             //var sourceArray = source.ToArray();
@@ -237,14 +240,15 @@ namespace TotoBook
 
                     var directoryName = g.Key;
 
-                    var children = AggregateItems(files.Select(f =>
+                    var archiveItems = files.Select(f =>
                     {
                         f.FileName = f.FileName
                             .Replace(g.Key + Path.DirectorySeparatorChar, "")
                             .Replace(g.Key + "/", "");
                         return f;
-                    }))
-                    .ToArray();
+                    });
+
+                    var children = AggregateItems(archiveItems).ToArray();
 
                     var archivedDirectory = new ArchiveItem()
                     {
