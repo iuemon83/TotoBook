@@ -218,6 +218,10 @@ namespace TotoBook
                     this.ToggleFullScreen();
                     break;
 
+                case Key.Space:
+                    this.ViewModel.ToggleAutoPager();
+                    break;
+
                 default:
                     e.Handled = false;
                     break;
@@ -396,7 +400,7 @@ namespace TotoBook
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-
+            this.ViewModel.RefreshFiles();
         }
 
         private void FileList_Sorting(object sender, DataGridSortingEventArgs e)

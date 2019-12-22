@@ -755,5 +755,10 @@ namespace TotoBook.ViewModel
             //ソート情報保持
             _currentSort = new SortDescription(propertyName, direction);
         }
+
+        public void RefreshFiles()
+        {
+            this.Navigate(this.currentDirectory);
+        }
     }
 }
