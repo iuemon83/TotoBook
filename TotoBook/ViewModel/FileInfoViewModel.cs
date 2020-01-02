@@ -302,7 +302,7 @@ namespace TotoBook.ViewModel
             //    TimeStamp = source.FileInfo.TimeStamp
             //};
             this.ArchiveItem = source;
-            this.FullName = this.ArchiveItem.FileName;
+            this.FullName = Path.Combine(parent.FullName, this.ArchiveItem.FileName);
             this.Name = this.ArchiveItem.FileName;
             this.LastUpdateDate = this.ArchiveItem.TimeStamp.ToString();
             this.Type = "";

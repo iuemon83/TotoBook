@@ -486,7 +486,12 @@ namespace TotoBook.ViewModel
             this.autoPagerTimer.Stop();
             this.IsEnabledAutoPager = false;
 
-            this.currentDirectory?.Cleanup();
+            if (dist != null
+                && this.currentDirectory != null
+                && !dist.FullName.Contains(this.currentDirectory.FullName))
+            {
+                this.currentDirectory?.Cleanup();
+            }
             this.currentDirectory = dist;
 
             var children = dist.GetChildrenForList();
@@ -741,7 +746,7 @@ namespace TotoBook.ViewModel
 
             var sortedQuery = propertyName switch
             {
-                "Name" => isAsc ? FileInfoList.OrderBy(file => file, new FileNameComparer()) : FileInfoList.OrderByDescending(p => p.Name),
+                "Name" => isAsc ? FileInfoList.OrderBy(file => file.Name, new FileNameComparer()) : FileInfoList.OrderByDescending(p => p.Name),
                 "Size" => isAsc ? FileInfoList.OrderBy(file => file.Size) : FileInfoList.OrderByDescending(p => p.Size),
                 "Type" => isAsc ? FileInfoList.OrderBy(file => file.Type) : FileInfoList.OrderByDescending(p => p.Type),
                 "LastUpdateDate" => isAsc ? FileInfoList.OrderBy(file => file.LastUpdateDate) : FileInfoList.OrderByDescending(p => p.LastUpdateDate),
@@ -758,7 +763,8 @@ namespace TotoBook.ViewModel
 
         public void RefreshFiles()
         {
-            this.Navigate(this.currentDirectory);
+            var children = this.currentDirectory.GetChildrenForList();
+            this.RefreshFileList(children);
         }
     }
 }
