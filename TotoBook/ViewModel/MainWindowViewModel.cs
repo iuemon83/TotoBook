@@ -77,6 +77,7 @@ namespace TotoBook.ViewModel
                 {
                     this.selectedFileInfo = value;
                     this.RaisePropertyChanged(nameof(this.SelectedFileInfo));
+                    this.RaisePropertyChanged(nameof(this.CurrentFilePath));
                 }
             }
         }
@@ -178,6 +179,8 @@ namespace TotoBook.ViewModel
                 this.RaisePropertyChanged(nameof(this.IsEnabledAutoPager));
             }
         }
+
+        public string CurrentFilePath => this.SelectedFileInfo?.FullName ?? "";
 
         /// <summary>
         /// コンストラクタ

@@ -73,7 +73,7 @@
                     </Canvas>
                 </Viewbox>
             </Button>
-            <TextBox Margin="3"></TextBox>
+            <TextBox Margin="3" Text="{Binding Path=CurrentFilePath, Mode=OneWay}"></TextBox>
         </DockPanel>
         <Grid>
             <Grid.ColumnDefinitions>
