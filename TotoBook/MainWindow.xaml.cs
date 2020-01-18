@@ -53,7 +53,7 @@ namespace TotoBook
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ListBoxItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void FileList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             var dataGridRow = (DataGridRow)sender;
             var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
@@ -65,7 +65,7 @@ namespace TotoBook
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void DataGridRow_KeyDown(object sender, KeyEventArgs e)
+        private void FileList_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {

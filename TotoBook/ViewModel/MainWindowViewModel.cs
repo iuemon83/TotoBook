@@ -68,6 +68,10 @@ namespace TotoBook.ViewModel
         /// 選択中のファイルリスト要素
         /// </summary>
         private FileInfoViewModel selectedFileInfo;
+
+        /// <summary>
+        /// 選択中のファイルリスト要素
+        /// </summary>
         public FileInfoViewModel SelectedFileInfo
         {
             get { return this.selectedFileInfo; }
@@ -657,9 +661,8 @@ namespace TotoBook.ViewModel
                     this.FileInfoList.Add(fileInfo);
                 });
 
-            this.SelectedFileInfo = this.FileInfoList.FirstOrDefault();
-
             this.ExecuteSort(this._currentSort.PropertyName, this._currentSort.Direction);
+            this.SelectedFileInfo = this.FileInfoList.FirstOrDefault();
         }
 
         /// <summary>
@@ -738,6 +741,11 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void ToggleAutoPager()
         {
+            if (this.SelectedFileInfo.FileType == FileInfoViewModel.FileInfoType.File)
+            {
+                this.Navigate(this.SelectedFileInfo);
+            }
+
             this.autoPagerTimer.Toggle();
             this.IsEnabledAutoPager = this.autoPagerTimer.IsEnabled;
         }

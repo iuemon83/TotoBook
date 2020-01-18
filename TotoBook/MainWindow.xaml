@@ -122,8 +122,8 @@
                           >
                     <DataGrid.Resources>
                         <Style TargetType="DataGridRow">
-                            <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick"/>
-                            <EventSetter Event="KeyDown" Handler="DataGridRow_KeyDown"/>
+                            <EventSetter Event="MouseDoubleClick" Handler="FileList_MouseDoubleClick"/>
+                            <EventSetter Event="KeyDown" Handler="FileList_KeyDown"/>
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.CellStyle>
