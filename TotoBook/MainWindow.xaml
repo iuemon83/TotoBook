@@ -206,7 +206,7 @@
                         MouseWheel="ImageContainer_MouseWheel"
                         MouseLeftButtonDown="ImageContainer_MouseLeftButtonDown"
                         KeyDown="ImageContainer_KeyDown">
-                    <Image>
+                    <Image RenderOptions.BitmapScalingMode="HighQuality">
                         <Image.Source>
                             <DrawingImage>
                                 <DrawingImage.Drawing>
