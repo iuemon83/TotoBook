@@ -31,17 +31,21 @@ namespace TotoBook.ViewModel
         /// <summary>
         /// 表示中の右側の画像ファイル
         /// </summary>
-        private FileInfoViewModel _rightFile;
+        private FileInfoViewModel rightFile;
 
         /// <summary>
         /// 表示中の左側の画像ファイル
         /// </summary>
-        private FileInfoViewModel _leftFile;
+        private FileInfoViewModel leftFile;
 
         /// <summary>
         /// 履歴管理
         /// </summary>
-        private readonly HistoryService historyService = new HistoryService();
+        private readonly BrowseHistory historyService = new BrowseHistory();
+
+        private SortDescription directorySortDescription = new SortDescription("Name", ListSortDirection.Ascending);
+
+        private SortDescription archiveSortDescription = new SortDescription("Name", ListSortDirection.Ascending);
 
         /// <summary>
         /// ファイルツリーのルート要素
@@ -61,8 +65,6 @@ namespace TotoBook.ViewModel
                 this.RaisePropertyChanged();
             }
         }
-
-        private SortDescription _currentSort;
 
         /// <summary>
         /// 選択中のファイルリスト要素
@@ -193,8 +195,6 @@ namespace TotoBook.ViewModel
         {
             ApplicationSettings.LoadSettingsFromFile();
 
-            this._currentSort = new SortDescription("Name", ListSortDirection.Ascending);
-
             this.autoPagerTimer = new AutoPagerTimer(() => this.ToNextScene());
 
             Spi.SpiManager.Load(ApplicationSettings.Instance.PluginDirectoryPath);
@@ -221,13 +221,13 @@ namespace TotoBook.ViewModel
 
             try
             {
-                this._rightFile?.Cleanup();
+                this.rightFile?.Cleanup();
             }
             catch { }
 
             try
             {
-                this._leftFile.Cleanup();
+                this.leftFile.Cleanup();
             }
             catch { }
 
@@ -318,7 +318,7 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void ToNextPage()
         {
-            var rightFile = this.GetNextFile(this._rightFile);
+            var rightFile = this.GetNextFile(this.rightFile);
             if (rightFile == null) return;
 
             this.Navigate(rightFile);
@@ -329,7 +329,7 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void ToNextScene()
         {
-            var rightFile = this.GetNextFile(this._leftFile ?? this._rightFile);
+            var rightFile = this.GetNextFile(this.leftFile ?? this.rightFile);
             if (rightFile == null) return;
 
             this.Navigate(rightFile);
@@ -340,7 +340,7 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void ToPrevPage()
         {
-            var rightFile = this.GetPrevFile(this._rightFile);
+            var rightFile = this.GetPrevFile(this.rightFile);
             if (rightFile == null) return;
 
             this.Navigate(rightFile);
@@ -351,7 +351,7 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void ToPrevScene()
         {
-            var prevFile = this.GetPrevFile(this._rightFile);
+            var prevFile = this.GetPrevFile(this.rightFile);
             if (prevFile == null) return;
 
             this.NavigateToPhotoFileReverse(prevFile);
@@ -611,8 +611,8 @@ namespace TotoBook.ViewModel
             if (rightFile != null) rightFile.IsDisplayed = true;
             if (leftFile != null) leftFile.IsDisplayed = true;
 
-            this._rightFile = rightFile;
-            this._leftFile = leftFile;
+            this.rightFile = rightFile;
+            this.leftFile = leftFile;
 
             var rectHeight = leftImage == null
                 ? rightImage.Height
@@ -661,7 +661,15 @@ namespace TotoBook.ViewModel
                     this.FileInfoList.Add(fileInfo);
                 });
 
-            this.ExecuteSort(this._currentSort.PropertyName, this._currentSort.Direction);
+            var currentSort = this.currentDirectory?.FileType switch
+            {
+                FileInfoViewModel.FileInfoType.Archive => this.archiveSortDescription,
+                FileInfoViewModel.FileInfoType.ArchivedDirectory => this.archiveSortDescription,
+                FileInfoViewModel.FileInfoType.Directory => this.directorySortDescription,
+                _ => this.directorySortDescription
+            };
+
+            this.ExecuteSort(currentSort);
             this.SelectedFileInfo = this.FileInfoList.FirstOrDefault();
         }
 
@@ -703,7 +711,7 @@ namespace TotoBook.ViewModel
         public void SelectFileTreeItemCommand(FileInfoViewModel file)
         {
             this.Navigate(file);
-            this.historyService.AddNewCurrent(file);
+            this.historyService.Visit(file);
         }
 
         public void DeleteFileListItemCommand(FileInfoViewModel file, Func<bool> confirm)
@@ -750,6 +758,9 @@ namespace TotoBook.ViewModel
             this.IsEnabledAutoPager = this.autoPagerTimer.IsEnabled;
         }
 
+        public void ExecuteSort(SortDescription sortDescription)
+            => this.ExecuteSort(sortDescription.PropertyName, sortDescription.Direction);
+
         public void ExecuteSort(string propertyName, ListSortDirection direction)
         {
 
@@ -757,10 +768,18 @@ namespace TotoBook.ViewModel
 
             var sortedQuery = propertyName switch
             {
-                "Name" => isAsc ? FileInfoList.OrderBy(file => file.Name, new FileNameComparer()) : FileInfoList.OrderByDescending(p => p.Name),
-                "Size" => isAsc ? FileInfoList.OrderBy(file => file.Size) : FileInfoList.OrderByDescending(p => p.Size),
-                "Type" => isAsc ? FileInfoList.OrderBy(file => file.Type) : FileInfoList.OrderByDescending(p => p.Type),
-                "LastUpdateDate" => isAsc ? FileInfoList.OrderBy(file => file.LastUpdateDate) : FileInfoList.OrderByDescending(p => p.LastUpdateDate),
+                "Name" => isAsc
+                    ? FileInfoList.OrderBy(file => file.Name, new FileNameComparer())
+                    : FileInfoList.OrderByDescending(file => file.Name, new FileNameComparer()),
+                "Size" => isAsc
+                    ? FileInfoList.OrderBy(file => file.Size)
+                    : FileInfoList.OrderByDescending(file => file.Size),
+                "Type" => isAsc
+                    ? FileInfoList.OrderBy(file => file.Type)
+                    : FileInfoList.OrderByDescending(file => file.Type),
+                "LastUpdateDate" => isAsc
+                    ? FileInfoList.OrderBy(file => file.LastUpdateDate)
+                    : FileInfoList.OrderByDescending(file => file.LastUpdateDate),
                 _ => throw new ArgumentException(),
             };
             FileInfoList = new ObservableCollection<FileInfoViewModel>(sortedQuery);
@@ -769,7 +788,17 @@ namespace TotoBook.ViewModel
             //Messenger.Instance.Send<SortMessage, MainWindow>(new SortMessage(propertyName, direction));
 
             //ソート情報保持
-            _currentSort = new SortDescription(propertyName, direction);
+            switch (this.currentDirectory?.FileType)
+            {
+                case FileInfoViewModel.FileInfoType.Archive:
+                case FileInfoViewModel.FileInfoType.ArchivedDirectory:
+                    this.archiveSortDescription = new SortDescription(propertyName, direction);
+                    break;
+
+                case FileInfoViewModel.FileInfoType.Directory:
+                    this.directorySortDescription = new SortDescription(propertyName, direction);
+                    break;
+            }
         }
 
         public void RefreshFiles()

@@ -407,18 +407,18 @@ namespace TotoBook
         {
             e.Handled = true;
 
-            var preDir = e.Column.SortDirection;
-            var newDir = preDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+            var oldDirection = e.Column.SortDirection;
+            var newDirection = oldDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
 
             //ViewModelのメソッドを呼び出し
-            this.ViewModel.ExecuteSort(e.Column.SortMemberPath, newDir);
+            this.ViewModel.ExecuteSort(e.Column.SortMemberPath, newDirection);
 
             //※ItemsSourceへのバインドを先に強制評価する
             this.FileList.GetBindingExpression(DataGrid.ItemsSourceProperty).UpdateTarget();
 
             //ソートアイコン表示
             var clm = this.FileList.Columns.First(c => c.SortMemberPath == e.Column.SortMemberPath);
-            clm.SortDirection = newDir;
+            clm.SortDirection = newDirection;
         }
 
         private void PreferenceMenuItem_Click(object sender, RoutedEventArgs e)
