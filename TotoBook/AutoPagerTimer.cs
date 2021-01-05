@@ -11,7 +11,7 @@ namespace TotoBook
         /// <summary>
         /// タイマー
         /// </summary>
-        private DispatcherTimer timer;
+        private readonly DispatcherTimer timer;
 
         /// <summary>
         /// タイマーが有効になっている場合はTrue、そうでなければFalse を取得します。

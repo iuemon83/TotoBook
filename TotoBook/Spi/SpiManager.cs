@@ -54,13 +54,11 @@ namespace TotoBook.Spi
                 .First(stream => stream != null);
         }
 
-        public static Stream GetFile(string archiveFilePath, FileInfo fileInfo)
+        public static byte[] GetFile(string archiveFilePath, int position)
         {
-            var bytes = archivePluginList
-                .Select(spi => spi.GetFile(archiveFilePath, fileInfo.Position))
+            return archivePluginList
+                .Select(spi => spi.GetFile(archiveFilePath, position))
                 .First(b => b != null);
-
-            return SpiManager.GetPictureStream(fileInfo.FileName, bytes);
         }
     }
 }

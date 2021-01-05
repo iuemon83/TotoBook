@@ -112,10 +112,8 @@ namespace TotoBook.Spi
         {
             var buf = File.ReadAllBytes(filePath);
 
-            using (var stream = this.GetPictureStream(filePath, buf))
-            {
-                return new Bitmap(stream);
-            }
+            using var stream = this.GetPictureStream(filePath, buf);
+            return new Bitmap(stream);
         }
 
         public Stream GetPictureStream(string filePath)
@@ -207,7 +205,6 @@ namespace TotoBook.Spi
 
         public IEnumerable<FileInfo> GetArchiveInfo(string filePath)
         {
-            var buf = File.ReadAllBytes(filePath);
             var isSucceeded = this.getArchiveInfo(filePath, 0, InputFlag.Disk, out IntPtr ptr);
             if (isSucceeded != 0) return null;
 

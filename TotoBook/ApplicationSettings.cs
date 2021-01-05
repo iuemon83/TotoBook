@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using YamlDotNet.Serialization;
 
 namespace TotoBook
 {
@@ -14,11 +15,28 @@ namespace TotoBook
         public static ApplicationSettings Instance { get; private set; }
 
         /// <summary>
-        /// スタティックコンストラクタ
+        /// 設定ファイルのパス
         /// </summary>
-        static ApplicationSettings()
+        private static readonly string SettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.yaml");
+
+        public static void LoadSettingsFromFile()
         {
-            Instance = new ApplicationSettings();
+            if (!File.Exists(SettingsFilePath))
+            {
+                // 設定ファイルがなければ作成する
+                var serializer = new SerializerBuilder().Build();
+                File.WriteAllText(SettingsFilePath, serializer.Serialize(new ApplicationSettings()));
+            }
+
+            var deserializer = new DeserializerBuilder().Build();
+            var text = File.ReadAllText(SettingsFilePath);
+            Instance = deserializer.Deserialize<ApplicationSettings>(text);
+        }
+
+        public static void SaveSettingsToFile()
+        {
+            var serializer = new SerializerBuilder().Build();
+            File.WriteAllText(SettingsFilePath, serializer.Serialize(Instance));
         }
 
         /// <summary>
@@ -34,11 +52,11 @@ namespace TotoBook
         /// <summary>
         /// Susie プラグインが格納されているディレクトリのパスを取得します。
         /// </summary>
-        public string PluginDirectoryPath { get; private set; } = Path.Combine(Environment.CurrentDirectory, "plugin");
+        public string PluginDirectoryPath { get; set; } = Path.Combine(Environment.CurrentDirectory, "plugin");
 
         /// <summary>
         /// 自動ページ送りの感覚を取得します。（秒）
         /// </summary>
-        public int AutoPagerInterval { get; private set; } = 2;
+        public double AutoPagerInterval { get; set; } = 2;
     }
 }

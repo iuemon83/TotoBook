@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media.Imaging;
 
-namespace TotoBook
+namespace TotoBook.ViewModel
 {
     public interface IFileListItemViewModel
     {

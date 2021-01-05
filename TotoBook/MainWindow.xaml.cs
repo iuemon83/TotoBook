@@ -1,11 +1,15 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using TotoBook.View;
+using TotoBook.ViewModel;
 
 namespace TotoBook
 {
     /// <summary>
-    /// MainWindow.xaml の相互作用ロジック
+    /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
@@ -49,7 +53,7 @@ namespace TotoBook
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ListBoxItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void FileList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             var dataGridRow = (DataGridRow)sender;
             var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
@@ -61,16 +65,27 @@ namespace TotoBook
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void DataGridRow_KeyDown(object sender, KeyEventArgs e)
+        private void FileList_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {
                 case Key.Enter:
-                    var dataGridRow = (DataGridRow)sender;
-                    var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
-                    this.SelectFileListItem(fileInfoViewModel);
-                    e.Handled = true;
-                    break;
+                    {
+                        var dataGridRow = (DataGridRow)sender;
+                        var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
+                        this.SelectFileListItem(fileInfoViewModel);
+                        e.Handled = true;
+                        break;
+                    }
+
+                case Key.Delete:
+                    {
+                        var dataGridRow = (DataGridRow)sender;
+                        var fileInfoViewModel = (FileInfoViewModel)dataGridRow.Item;
+                        this.DeleteFileListItem(fileInfoViewModel);
+                        e.Handled = true;
+                        break;
+                    }
             }
         }
 
@@ -92,6 +107,21 @@ namespace TotoBook
             {
                 this.SetFocusFileList();
             }
+        }
+
+        /// <summary>
+        /// ファイル一覧で選択中のファイルを削除します。
+        /// </summary>
+        /// <param name="fileInfoViewModel"></param>
+        private void DeleteFileListItem(FileInfoViewModel fileInfoViewModel)
+        {
+            this.ViewModel.DeleteFileListItemCommand(fileInfoViewModel, () =>
+                MessageBox.Show($"「{fileInfoViewModel.Name}」を削除します。よろしいですか？", "ファイルの削除", MessageBoxButton.YesNo) == MessageBoxResult.Yes
+            );
+
+
+
+            this.SetFocusFileList();
         }
 
         /// <summary>
@@ -186,6 +216,10 @@ namespace TotoBook
 
                 case Key.F11:
                     this.ToggleFullScreen();
+                    break;
+
+                case Key.Space:
+                    this.ViewModel.ToggleAutoPager();
                     break;
 
                 default:
@@ -366,7 +400,34 @@ namespace TotoBook
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
+            this.ViewModel.RefreshFiles();
+        }
 
+        private void FileList_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            var oldDirection = e.Column.SortDirection;
+            var newDirection = oldDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+
+            //ViewModelのメソッドを呼び出し
+            this.ViewModel.ExecuteSort(e.Column.SortMemberPath, newDirection);
+
+            //※ItemsSourceへのバインドを先に強制評価する
+            this.FileList.GetBindingExpression(DataGrid.ItemsSourceProperty).UpdateTarget();
+
+            //ソートアイコン表示
+            var clm = this.FileList.Columns.First(c => c.SortMemberPath == e.Column.SortMemberPath);
+            clm.SortDirection = newDirection;
+        }
+
+        private void PreferenceMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            new PreferenceDialog()
+            {
+                Owner = this
+            }
+            .ShowDialog();
         }
     }
 }
