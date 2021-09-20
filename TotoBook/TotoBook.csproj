@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.4" />
     <PackageReference Include="MvvmLightLibsStd10" Version="5.4.1.1" />
-    <PackageReference Include="sharpcompress" Version="0.25.1" />
+    <PackageReference Include="sharpcompress" Version="0.29.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="System.Interactive" Version="4.1.1" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
