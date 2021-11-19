@@ -90,6 +90,7 @@ namespace TotoBook.ViewModel
             Directory = 1 << 1,
             Archive = 1 << 2,
             ArchivedDirectory = 1 << 3,
+            NestedArchive = 1 << 4,
         }
 
         /// <summary>
@@ -220,9 +221,10 @@ namespace TotoBook.ViewModel
         }
 
         /// <summary>
-        /// コンストラクタ
+        /// アーカイブ以外のファイル、またはディレクトリを表すFileInfoViewModel のインスタンスを初期化します。
         /// </summary>
-        /// <param name="source"></param>
+        /// <param name="source">ファイル、またはディレクトリを表すファイル要素</param>
+        /// <param name="mainWindowViewModel">メインウィンドウのインスタンス</param>
         public FileInfoViewModel(FileSystemInfo source, MainWindowViewModel mainWindowViewModel)
         {
             this.mainWindowViewModel = mainWindowViewModel;
@@ -261,6 +263,12 @@ namespace TotoBook.ViewModel
             }
         }
 
+        /// <summary>
+        /// アーカイブファイルを表すFileInfoViewModel のインスタンスを初期化します。
+        /// </summary>
+        /// <param name="source">アーカイブファイル</param>
+        /// <param name="mainWindowViewModel">メインウィンドウのインスタンス</param>
+        /// <param name="parent">親要素</param>
         public FileInfoViewModel(ArchiveItem source, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent)
         {
             this.mainWindowViewModel = mainWindowViewModel;
@@ -378,26 +386,44 @@ namespace TotoBook.ViewModel
             switch (this.FileType)
             {
                 case FileInfoType.Archive:
-                    var (archive, children) = Archive.GetChildrenForList(this.FullName, this.mainWindowViewModel, this);
-                    this.currentArchive?.Dispose();
-                    this.currentArchive = archive;
-                    return children;
+                    {
+                        var (archive, children) = Archive.GetChildrenForList(this.FullName);
+                        this.currentArchive?.Dispose();
+                        this.currentArchive = archive;
+
+                        return children
+                            .Select(item => new FileInfoViewModel(item, mainWindowViewModel, this))
+                            .ToArray();
+                    }
 
                 case FileInfoType.Directory:
-                    try
                     {
-                        return new DirectoryInfo(this.FullName)
-                            .EnumerateFileSystemInfos()
-                            .Where(file => !file.Attributes.HasFlag(FileAttributes.System))
-                            .Select(file => new FileInfoViewModel(file, this.mainWindowViewModel));
-                    }
-                    catch (IOException)
-                    {
-                        return new FileInfoViewModel[0];
+                        try
+                        {
+                            return new DirectoryInfo(this.FullName)
+                                .EnumerateFileSystemInfos()
+                                .Where(file => !file.Attributes.HasFlag(FileAttributes.System))
+                                .Select(file => new FileInfoViewModel(file, this.mainWindowViewModel));
+                        }
+                        catch (IOException)
+                        {
+                            return new FileInfoViewModel[0];
+                        }
                     }
 
                 case FileInfoType.ArchivedDirectory:
                     return this.archiveChildren;
+
+                case FileInfoType.NestedArchive:
+                    {
+                        var (archive, children) = Archive.GetChildrenForList(this.GetFileStream());
+                        //this.currentArchive?.Dispose();
+                        //this.currentArchive = archive;
+
+                        return children
+                            .Select(item => new FileInfoViewModel(item, mainWindowViewModel, this))
+                            .ToArray();
+                    }
 
                 default:
                     return new FileInfoViewModel[0];

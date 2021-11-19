@@ -5,99 +5,45 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using TotoBook.ViewModel;
 
 namespace TotoBook
 {
-    class Archive
+    public class Archive
     {
         /// <summary>
         /// ファイル一覧に使用するための子要素を取得します。
         /// </summary>
         /// <returns></returns>
-        public static (IArchive Archive, IEnumerable<FileInfoViewModel> Children) GetChildrenForList(string fullName, MainWindowViewModel mainWindowViewModel, FileInfoViewModel parent)
+        public static (IArchive Archive, IEnumerable<ArchiveItem> Children) GetChildrenForList(string fullName)
         {
             var opts = new ReaderOptions();
             var encoding = Encoding.GetEncoding(932);
             opts.ArchiveEncoding = new ArchiveEncoding
             {
-                CustomDecoder = (data, x, y) =>
-                {
-                    return encoding.GetString(data);
-                }
+                CustomDecoder = (data, x, y) => encoding.GetString(data)
             };
 
             var archive = ArchiveFactory.Open(fullName, opts);
 
-            var children = GetArchiveItemList(archive.Entries)
-                .Select(item => new FileInfoViewModel(item, mainWindowViewModel, parent))
-                .ToArray();
-
-            return (archive, children);
+            return (archive, GetArchiveItemList(archive.Entries));
         }
 
         /// <summary>
-        /// アーカイブ内のファイルの一覧を取得します。
+        /// ファイル一覧に使用するための子要素を取得します。
         /// </summary>
-        /// <param name="source">アーカイブファイルを表すFileInfo インスタンス</param>
         /// <returns></returns>
-        private static IEnumerable<ArchiveItem> GetArchiveItemList(IEnumerable<Spi.FileInfo> source)
+        public static (IArchive Archive, IEnumerable<ArchiveItem> Children) GetChildrenForList(Stream source)
         {
-            var sourceArray = source.ToArray();
-            var archivedDirectoryList = sourceArray
-                .GroupBy(f => f.Path.Split(Path.DirectorySeparatorChar)[0]);
+            var opts = new ReaderOptions();
+            var encoding = Encoding.GetEncoding(932);
+            opts.ArchiveEncoding = new ArchiveEncoding
+            {
+                CustomDecoder = (data, x, y) => encoding.GetString(data)
+            };
 
-            return archivedDirectoryList
-                .SelectMany(g =>
-                {
-                    // アーカイブファイル内で直下に置かれているファイル
-                    if (string.IsNullOrEmpty(g.Key))
-                    {
-                        return g.Select(f => new ArchiveItem()
-                        {
-                            Type = ArchiveItem.ArchiveItemType.File,
-                            //Name = f.FileName,
-                            FileName = f.FileName,
-                            FullName = f.FileName,
-                            FileSize = f.FileSize,
-                            TimeStamp = f.TimeStamp,
-                            Position = f.Position,
-                        });
-                    }
+            var archive = ArchiveFactory.Open(source, opts);
 
-                    var children = GetArchiveItemList(g.Select(f =>
-                    {
-                        f.Path = f.Path.Replace(g.Key + Path.DirectorySeparatorChar, "");
-                        return f;
-                    }))
-                    .ToArray();
-
-                    //var fileInfo = new Spi.FileInfo()
-                    //{
-                    //    FileName = g.Key,
-                    //    Path = g.Key,
-                    //    CompSize = 0,
-                    //    CRC = 0,
-                    //    FileSize = 0,
-                    //    Method = "",
-                    //    Position = 0,
-                    //    TimeStamp = 0,
-                    //};
-
-                    var archivedDirectory = new ArchiveItem()
-                    {
-                        Type = ArchiveItem.ArchiveItemType.Directory,
-                        //Name = g.Key,
-                        FileName = g.Key,
-                        FullName = g.Key,
-                        FileSize = 0,
-                        TimeStamp = 0,
-                        Position = 0,
-                        Children = children,
-                    };
-
-                    return new[] { archivedDirectory };
-                });
+            return (archive, GetArchiveItemList(archive.Entries));
         }
 
         /// <summary>
@@ -112,9 +58,8 @@ namespace TotoBook
                 .Select(entry => new ArchiveItem()
                 {
                     Type = ArchiveItem.ArchiveItemType.File,
-                    //Name = f.Key,
-                    FullName = entry.Key,
-                    FileName = entry.Key,
+                    FullName = entry.Key.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar),
+                    FileName = entry.Key.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar),
                     FileSize = entry.Size,
                     TimeStamp = entry.CreatedTime?.Ticks ?? 0,
                     Position = 0,
@@ -132,7 +77,7 @@ namespace TotoBook
         }
 
         /// <summary>
-        /// アーカイブ内のファイルの一覧を取得します。
+        /// 並列になっている要素を階層構造に組み立てなおして取得します。
         /// </summary>
         /// <param name="source">アーカイブファイルを表すFileInfo インスタンス</param>
         /// <returns></returns>
@@ -140,13 +85,13 @@ namespace TotoBook
         {
             var sourceArray = source.ToArray();
             var archivedDirectoryList = sourceArray
-                .GroupBy(entry => entry.FileName.Split(Path.DirectorySeparatorChar)[0].Split('/')[0]);
+                .GroupBy(entry => entry.FileName.Split(Path.DirectorySeparatorChar)[0]);
 
             return archivedDirectoryList
                 .SelectMany(g =>
                 {
                     var files = g.ToArray();
-                    var isDirectory = files.Length != 1;
+                    var isDirectory = files[0].FileName.Contains(Path.DirectorySeparatorChar);
 
                     // アーカイブファイル内で直下に置かれているファイル
                     if (!isDirectory)
@@ -158,9 +103,7 @@ namespace TotoBook
 
                     var archiveItems = files.Select(f =>
                     {
-                        f.FileName = f.FileName
-                            .Replace(g.Key + Path.DirectorySeparatorChar, "")
-                            .Replace(g.Key + "/", "");
+                        f.FileName = f.FileName.Substring(f.FileName.IndexOf(Path.DirectorySeparatorChar) + 1);
                         return f;
                     });
 
@@ -169,7 +112,6 @@ namespace TotoBook
                     var archivedDirectory = new ArchiveItem()
                     {
                         Type = ArchiveItem.ArchiveItemType.Directory,
-                        //Name = directoryName,
                         FileName = directoryName,
                         FullName = directoryName,
                         Children = children,

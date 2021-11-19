@@ -20,4 +20,10 @@
     <ProjectReference Include="..\TotoBook\TotoBook.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="testdata\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
