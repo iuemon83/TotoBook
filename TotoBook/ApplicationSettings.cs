@@ -42,7 +42,7 @@ namespace TotoBook
         /// <summary>
         /// 対応するアーカイブファイルの拡張子のリストを取得します。
         /// </summary>
-        public string[] ArchiveExtensions { get; private set; } = new[] { ".zip", ".rar", };
+        public string[] ArchiveExtensions { get; private set; } = new[] { ".zip", ".rar", ".cbz", };
 
         /// <summary>
         /// 対応する画像ファイルの拡張子のリストを取得します。
