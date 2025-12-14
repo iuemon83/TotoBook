@@ -64,7 +64,7 @@ namespace TotoBook
         /// <summary>
         /// 対応する画像ファイルの拡張子のリストを取得します。
         /// </summary>
-        public string[] FileExtensions { get; private set; } = new[] { ".jpg", ".jpeg", ".png", ".gif", };
+        public string[] FileExtensions { get; private set; } = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", };
 
         /// <summary>
         /// Susie プラグインが格納されているディレクトリのパスを取得します。

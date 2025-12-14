@@ -300,5 +300,12 @@ namespace TotoBook_Test
                 }
             }
         }
+
+        [Fact]
+        public void WebP形式がサポートされていることを確認する()
+        {
+            // WebP形式が対応拡張子リストに含まれていることを確認
+            Assert.Contains(".webp", ApplicationSettings.Instance.FileExtensions);
+        }
     }
 }

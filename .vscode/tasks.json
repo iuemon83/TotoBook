@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-debug",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["build", "${workspaceFolder}/TotoBook.sln", "-c", "Debug"],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "build-release",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["build", "${workspaceFolder}/TotoBook.sln", "-c", "Release"],
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "test",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["test", "${workspaceFolder}/TotoBook_Test/TotoBook_Test.csproj"],
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    }
+  ]
+}
