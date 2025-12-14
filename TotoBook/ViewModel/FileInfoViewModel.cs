@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace TotoBook.ViewModel
     /// <summary>
     /// ファイル
     /// </summary>
-    public class FileInfoViewModel : ViewModelBase, IFileListItemViewModel, IFileTreeItemViewModel
+    public class FileInfoViewModel : ObservableRecipient, IFileListItemViewModel, IFileTreeItemViewModel
     {
         private IArchive currentArchive;
 
@@ -113,7 +113,7 @@ namespace TotoBook.ViewModel
                 if (this.isDisplayed != value)
                 {
                     this.isDisplayed = value;
-                    this.RaisePropertyChanged(nameof(this.IsDisplayed));
+                    OnPropertyChanged();
                 }
             }
         }
@@ -155,7 +155,7 @@ namespace TotoBook.ViewModel
                 if (value) this.LoadChildren();
 
                 _IsExpanded = value;
-                this.RaisePropertyChanged(nameof(this.IsExpanded));
+                OnPropertyChanged();
             }
         }
 
@@ -173,7 +173,7 @@ namespace TotoBook.ViewModel
         public FileInfoViewModel Parent
         {
             get { return _Parent; }
-            set { _Parent = value; this.RaisePropertyChanged(nameof(this.Parent)); }
+            set { _Parent = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace TotoBook.ViewModel
         public ObservableCollection<FileInfoViewModel> Children
         {
             get { return _Children; }
-            set { _Children = value; this.RaisePropertyChanged(nameof(this.Children)); }
+            set { _Children = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace TotoBook.ViewModel
                 if (this._IsSelected == value) return;
 
                 _IsSelected = value;
-                this.RaisePropertyChanged(nameof(this.IsSelected));
+                OnPropertyChanged();
 
                 if (value)
                 {
@@ -305,9 +305,9 @@ namespace TotoBook.ViewModel
                 .ToArray();
         }
 
-        public override void Cleanup()
+        protected override void OnDeactivated()
         {
-            base.Cleanup();
+            base.OnDeactivated();
 
             this.currentArchive?.Dispose();
         }

@@ -1,8 +1,8 @@
-﻿using GalaSoft.MvvmLight;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace TotoBook.ViewModel
 {
-    class PreferenceDialogViewModel : ViewModelBase
+    class PreferenceDialogViewModel : ObservableRecipient
     {
         private string _PluginDirectoryPath;
 
@@ -17,7 +17,7 @@ namespace TotoBook.ViewModel
                 if (this._PluginDirectoryPath == value) return;
 
                 this._PluginDirectoryPath = value;
-                this.RaisePropertyChanged();
+                this.OnPropertyChanged();
             }
         }
 
@@ -34,7 +34,7 @@ namespace TotoBook.ViewModel
                 if (this._AutoPagerInterval == value) return;
 
                 this._AutoPagerInterval = value;
-                this.RaisePropertyChanged();
+                this.OnPropertyChanged();
             }
         }
 

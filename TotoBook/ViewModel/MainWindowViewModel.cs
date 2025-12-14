@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,7 +14,7 @@ namespace TotoBook.ViewModel
     /// <summary>
     /// メインウィンドウのビューモデル
     /// </summary>
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ObservableRecipient
     {
         public event EventHandler<EventArgs> ScrollFileListToSelectedItem;
 
@@ -62,7 +62,7 @@ namespace TotoBook.ViewModel
             set
             {
                 _fileInfoList = value;
-                this.RaisePropertyChanged();
+                this.OnPropertyChanged();
             }
         }
 
@@ -82,8 +82,8 @@ namespace TotoBook.ViewModel
                 if (value != this.selectedFileInfo)
                 {
                     this.selectedFileInfo = value;
-                    this.RaisePropertyChanged(nameof(this.SelectedFileInfo));
-                    this.RaisePropertyChanged(nameof(this.CurrentFilePath));
+                    this.OnPropertyChanged();
+                    this.OnPropertyChanged(nameof(this.CurrentFilePath));
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.rightImageSource = value;
-                this.RaisePropertyChanged(nameof(this.RightImageSource));
+                this.OnPropertyChanged();
             }
         }
 
@@ -112,7 +112,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.leftImageSource = value;
-                this.RaisePropertyChanged(nameof(this.LeftImageSource));
+                this.OnPropertyChanged();
             }
         }
 
@@ -126,7 +126,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.rightImageRect = value;
-                this.RaisePropertyChanged(nameof(this.RightImageRect));
+                this.OnPropertyChanged();
             }
         }
 
@@ -140,7 +140,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.leftImageRect = value;
-                this.RaisePropertyChanged(nameof(this.LeftImageRect));
+                this.OnPropertyChanged();
             }
         }
 
@@ -154,7 +154,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.totalPageCount = value;
-                this.RaisePropertyChanged(nameof(this.TotalPageCount));
+                this.OnPropertyChanged();
             }
         }
 
@@ -168,7 +168,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.currentPageNumber = value;
-                this.RaisePropertyChanged(nameof(this.CurrentPageNumber));
+                this.OnPropertyChanged();
             }
         }
 
@@ -182,7 +182,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.enableAutoPager = value;
-                this.RaisePropertyChanged(nameof(this.IsEnabledAutoPager));
+                this.OnPropertyChanged();
             }
         }
 
@@ -209,25 +209,34 @@ namespace TotoBook.ViewModel
                 });
         }
 
-        public override void Cleanup()
+        protected override void OnDeactivated()
         {
-            base.Cleanup();
+            base.OnDeactivated();
 
             try
             {
-                this.currentDirectory?.Cleanup();
+                if (this.currentDirectory != null)
+                {
+                    this.currentDirectory.IsActive = false;
+                }
             }
             catch { }
 
             try
             {
-                this.rightFile?.Cleanup();
+                if (this.rightFile != null)
+                {
+                    this.rightFile.IsActive = false;
+                }
             }
             catch { }
 
             try
             {
-                this.leftFile.Cleanup();
+                if (this.leftFile != null)
+                {
+                    this.leftFile.IsActive = false;
+                }
             }
             catch { }
 
@@ -235,7 +244,10 @@ namespace TotoBook.ViewModel
             {
                 try
                 {
-                    fileInfo?.Cleanup();
+                    if (fileInfo != null)
+                    {
+                        fileInfo.IsActive = false;
+                    }
                 }
                 catch { }
             }
@@ -497,7 +509,10 @@ namespace TotoBook.ViewModel
                 && this.currentDirectory != null
                 && !dist.FullName.Contains(this.currentDirectory.FullName))
             {
-                this.currentDirectory?.Cleanup();
+                if (this.currentDirectory != null)
+                {
+                    this.currentDirectory.IsActive = false;
+                }
             }
             this.currentDirectory = dist;
 

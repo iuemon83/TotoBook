@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TotoBook.ViewModel;
 using Xunit;
@@ -18,7 +19,7 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void �t�@�C�����̃\�[�g()
+        public void ファイル名のソート()
         {
             var test = new[] {
                 "kaiji09_008.jpg",
@@ -41,7 +42,7 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void �t�@�C�����̃\�[�g2()
+        public void ファイル名のソート2()
         {
             var test = new[] {
                 "Kaiji 07 (10).jpg",
@@ -57,6 +58,22 @@ namespace TotoBook_Test
             };
 
             TestFileNameCompare(test, expected);
+        }
+
+        //[Fact]
+        //public void シンプルなテスト()
+        //{
+        //    Assert.True(true);
+        //}
+
+        [Fact]
+        public void ファイル名のソート3()
+        {
+            var a = new DirectoryInfo("C:\\Users\\owner\\Pictures\\books\\[島袋光年] トリコ")
+                .EnumerateFileSystemInfos()
+                .ToArray();
+
+            throw new System.NotImplementedException();
         }
     }
 }
