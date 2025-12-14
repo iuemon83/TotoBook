@@ -7,7 +7,7 @@ namespace TotoBook
     /// <summary>
     /// アプリケーションの設定
     /// </summary>
-    class ApplicationSettings
+    public class ApplicationSettings
     {
         /// <summary>
         /// シングルトン用インスタンス を取得します。

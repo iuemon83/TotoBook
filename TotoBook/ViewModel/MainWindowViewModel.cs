@@ -464,6 +464,7 @@ namespace TotoBook.ViewModel
 
                 case FileInfoViewModel.FileInfoType.Archive:
                 case FileInfoViewModel.FileInfoType.ArchivedDirectory:
+                case FileInfoViewModel.FileInfoType.NestedArchive:
                     this.NavigateToArchiveFile(nextFileInfo);
                     break;
 
@@ -484,7 +485,8 @@ namespace TotoBook.ViewModel
         private void NavigateToArchiveFile(FileInfoViewModel dist)
         {
             if (dist.FileType != FileInfoViewModel.FileInfoType.Archive
-                && dist.FileType != FileInfoViewModel.FileInfoType.ArchivedDirectory) return;
+                && dist.FileType != FileInfoViewModel.FileInfoType.ArchivedDirectory
+                && dist.FileType != FileInfoViewModel.FileInfoType.NestedArchive) return;
 
             this.SetCurrentDirectory(dist);
         }
@@ -680,6 +682,7 @@ namespace TotoBook.ViewModel
             {
                 FileInfoViewModel.FileInfoType.Archive => this.archiveSortDescription,
                 FileInfoViewModel.FileInfoType.ArchivedDirectory => this.archiveSortDescription,
+                FileInfoViewModel.FileInfoType.NestedArchive => this.archiveSortDescription,
                 FileInfoViewModel.FileInfoType.Directory => this.directorySortDescription,
                 _ => this.directorySortDescription
             };
@@ -807,6 +810,7 @@ namespace TotoBook.ViewModel
             {
                 case FileInfoViewModel.FileInfoType.Archive:
                 case FileInfoViewModel.FileInfoType.ArchivedDirectory:
+                case FileInfoViewModel.FileInfoType.NestedArchive:
                     this.archiveSortDescription = new SortDescription(propertyName, direction);
                     break;
 

@@ -293,7 +293,7 @@ namespace TotoBook.ViewModel
                     var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLower();
 
                     this.FileType = ApplicationSettings.Instance.ArchiveExtensions.Contains(extension)
-                        ? FileInfoType.ArchivedDirectory
+                        ? FileInfoType.NestedArchive
                         : ApplicationSettings.Instance.FileExtensions.Contains(extension)
                             ? FileInfoType.File
                             : FileInfoType.Unknown;
