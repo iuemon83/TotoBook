@@ -6,7 +6,7 @@ using Xunit;
 namespace TotoBook_Test
 {
     /// <summary>
-    /// Archive ƒNƒ‰ƒX‚ÌƒeƒXƒg
+    /// Archive ã‚¯ãƒ©ã‚¹ã®ãƒ†ã‚¹ãƒˆ
     /// </summary>
     public class Archive_Test
     {
@@ -39,9 +39,9 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒA[ƒJƒCƒu“à‚Ì—v‘f‚ğæ“¾‚·‚é_0ŠK‘w()
+        public void ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–å†…ã®è¦ç´ ã‚’å–å¾—ã™ã‚‹_0éšå±¤()
         {
-            var testFilePath = @"testdata\testfile_0ŠK‘w.zip";
+            var testFilePath = @"testdata\testfile_0éšå±¤.zip";
             var expectedTestFiles = new[] { new TestFile("testfile1.txt") };
 
             var (_, actual) = Archive.GetChildrenForList(testFilePath);
@@ -50,9 +50,9 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒA[ƒJƒCƒu“à‚Ì—v‘f‚ğæ“¾‚·‚é_1ŠK‘w()
+        public void ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–å†…ã®è¦ç´ ã‚’å–å¾—ã™ã‚‹_1éšå±¤()
         {
-            var testFilePath = @"testdata\testfile_1ŠK‘w.zip";
+            var testFilePath = @"testdata\testfile_1éšå±¤.zip";
             var expectedTestFiles = new[]
             {
                 new TestFile("testfile1",
@@ -68,9 +68,9 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒA[ƒJƒCƒu“à‚Ì—v‘f‚ğæ“¾‚·‚é_2ŠK‘w()
+        public void ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–å†…ã®è¦ç´ ã‚’å–å¾—ã™ã‚‹_2éšå±¤()
         {
-            var testFilePath = @"testdata\testfile_2ŠK‘w.zip";
+            var testFilePath = @"testdata\testfile_2éšå±¤.zip";
             var expectedTestFiles = new[]
             {
                 new TestFile("testfile1",
@@ -90,9 +90,9 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒA[ƒJƒCƒu“à‚Ì—v‘f‚ğæ“¾‚·‚é_ƒA[ƒJƒCƒu‚ªƒlƒXƒg‚µ‚Ä‚¢‚é()
+        public void ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–å†…ã®è¦ç´ ã‚’å–å¾—ã™ã‚‹_ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–ãŒãƒã‚¹ãƒˆã—ã¦ã„ã‚‹()
         {
-            var testFilePath = @"testdata\testfile_ƒlƒXƒg.zip";
+            var testFilePath = @"testdata\testfile_ãƒã‚¹ãƒˆ.zip";
             var expectedTestFiles = new[]
             {
                 new TestFile("testfile2",
@@ -113,9 +113,9 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒA[ƒJƒCƒu“à‚Ì—v‘f‚ğæ“¾‚·‚é_“¯‚¶–¼‘O‚ÌƒtƒHƒ‹ƒ_‚ªƒlƒXƒg()
+        public void ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–å†…ã®è¦ç´ ã‚’å–å¾—ã™ã‚‹_åŒã˜åå‰ã®ãƒ•ã‚©ãƒ«ãƒ€ãŒãƒã‚¹ãƒˆ()
         {
-            var testFilePath = @"testdata\testfile_“¯‚¶–¼‘O‚ÌƒtƒHƒ‹ƒ_‚ªƒlƒXƒg.zip";
+            var testFilePath = @"testdata\testfile_åŒã˜åå‰ã®ãƒ•ã‚©ãƒ«ãƒ€ãŒãƒã‚¹ãƒˆ.zip";
             var expectedTestFiles = new[]
             {
                 new TestFile("testfile",

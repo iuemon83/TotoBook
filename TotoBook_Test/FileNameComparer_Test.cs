@@ -59,21 +59,5 @@ namespace TotoBook_Test
 
             TestFileNameCompare(test, expected);
         }
-
-        //[Fact]
-        //public void シンプルなテスト()
-        //{
-        //    Assert.True(true);
-        //}
-
-        [Fact]
-        public void ファイル名のソート3()
-        {
-            var a = new DirectoryInfo("C:\\Users\\owner\\Pictures\\books\\[島袋光年] トリコ")
-                .EnumerateFileSystemInfos()
-                .ToArray();
-
-            throw new System.NotImplementedException();
-        }
     }
 }
