@@ -9,9 +9,9 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
-    <PackageReference Include="sharpcompress" Version="0.39.0" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
-    <PackageReference Include="System.Interactive" Version="6.0.1" />
+    <PackageReference Include="sharpcompress" Version="0.42.1" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
+    <PackageReference Include="System.Interactive" Version="7.0.0" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
