@@ -354,4 +354,5 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-
+# Test generated files
+TotoBook_Test/testdata/test_nested_archive.zip

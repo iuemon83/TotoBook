@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
@@ -15,9 +15,10 @@ namespace TotoBook.ViewModel
     /// <summary>
     /// ファイル
     /// </summary>
-    public class FileInfoViewModel : ViewModelBase, IFileListItemViewModel, IFileTreeItemViewModel
+    public class FileInfoViewModel : ObservableRecipient, IFileListItemViewModel, IFileTreeItemViewModel, IDisposable
     {
         private IArchive currentArchive;
+        private bool disposed = false;
 
         public static FileInfoViewModel Dummy
         {
@@ -113,7 +114,7 @@ namespace TotoBook.ViewModel
                 if (this.isDisplayed != value)
                 {
                     this.isDisplayed = value;
-                    this.RaisePropertyChanged(nameof(this.IsDisplayed));
+                    OnPropertyChanged();
                 }
             }
         }
@@ -155,7 +156,7 @@ namespace TotoBook.ViewModel
                 if (value) this.LoadChildren();
 
                 _IsExpanded = value;
-                this.RaisePropertyChanged(nameof(this.IsExpanded));
+                OnPropertyChanged();
             }
         }
 
@@ -173,7 +174,7 @@ namespace TotoBook.ViewModel
         public FileInfoViewModel Parent
         {
             get { return _Parent; }
-            set { _Parent = value; this.RaisePropertyChanged(nameof(this.Parent)); }
+            set { _Parent = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -190,7 +191,7 @@ namespace TotoBook.ViewModel
         public ObservableCollection<FileInfoViewModel> Children
         {
             get { return _Children; }
-            set { _Children = value; this.RaisePropertyChanged(nameof(this.Children)); }
+            set { _Children = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -204,7 +205,7 @@ namespace TotoBook.ViewModel
                 if (this._IsSelected == value) return;
 
                 _IsSelected = value;
-                this.RaisePropertyChanged(nameof(this.IsSelected));
+                OnPropertyChanged();
 
                 if (value)
                 {
@@ -290,10 +291,10 @@ namespace TotoBook.ViewModel
                     break;
 
                 case ArchiveItem.ArchiveItemType.File:
-                    var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLower();
+                    var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLowerInvariant();
 
                     this.FileType = ApplicationSettings.Instance.ArchiveExtensions.Contains(extension)
-                        ? FileInfoType.ArchivedDirectory
+                        ? FileInfoType.NestedArchive
                         : ApplicationSettings.Instance.FileExtensions.Contains(extension)
                             ? FileInfoType.File
                             : FileInfoType.Unknown;
@@ -305,9 +306,9 @@ namespace TotoBook.ViewModel
                 .ToArray();
         }
 
-        public override void Cleanup()
+        protected override void OnDeactivated()
         {
-            base.Cleanup();
+            base.OnDeactivated();
 
             this.currentArchive?.Dispose();
         }
@@ -417,8 +418,8 @@ namespace TotoBook.ViewModel
                 case FileInfoType.NestedArchive:
                     {
                         var (archive, children) = Archive.GetChildrenForList(this.GetFileStream());
-                        //this.currentArchive?.Dispose();
-                        //this.currentArchive = archive;
+                        this.currentArchive?.Dispose();
+                        this.currentArchive = archive;
 
                         return children
                             .Select(item => new FileInfoViewModel(item, mainWindowViewModel, this))
@@ -427,6 +428,33 @@ namespace TotoBook.ViewModel
 
                 default:
                     return new FileInfoViewModel[0];
+            }
+        }
+
+        /// <summary>
+        /// リソースを解放します。
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// リソースを解放します。
+        /// </summary>
+        /// <param name="disposing">マネージドリソースを破棄する場合はtrue</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    // マネージドリソースの破棄
+                    currentArchive?.Dispose();
+                    currentArchive = null;
+                }
+                disposed = true;
             }
         }
     }

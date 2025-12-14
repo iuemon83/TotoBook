@@ -32,7 +32,6 @@ namespace TotoBook
                 Interval = TimeSpan.FromSeconds(ApplicationSettings.Instance.AutoPagerInterval)
             };
             this.timer.Tick += new EventHandler((o, ev) => action());
-            this.timer.Start();
         }
 
         /// <summary>

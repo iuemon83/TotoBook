@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TotoBook.ViewModel;
 using Xunit;
@@ -18,7 +19,7 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒtƒ@ƒCƒ‹–¼‚Ìƒ\[ƒg()
+        public void ãƒ•ã‚¡ã‚¤ãƒ«åã®ã‚½ãƒ¼ãƒˆ()
         {
             var test = new[] {
                 "kaiji09_008.jpg",
@@ -41,7 +42,7 @@ namespace TotoBook_Test
         }
 
         [Fact]
-        public void ƒtƒ@ƒCƒ‹–¼‚Ìƒ\[ƒg2()
+        public void ãƒ•ã‚¡ã‚¤ãƒ«åã®ã‚½ãƒ¼ãƒˆ2()
         {
             var test = new[] {
                 "Kaiji 07 (10).jpg",

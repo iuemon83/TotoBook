@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,7 +14,7 @@ namespace TotoBook.ViewModel
     /// <summary>
     /// メインウィンドウのビューモデル
     /// </summary>
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ObservableRecipient
     {
         public event EventHandler<EventArgs> ScrollFileListToSelectedItem;
 
@@ -62,7 +62,7 @@ namespace TotoBook.ViewModel
             set
             {
                 _fileInfoList = value;
-                this.RaisePropertyChanged();
+                this.OnPropertyChanged();
             }
         }
 
@@ -82,8 +82,8 @@ namespace TotoBook.ViewModel
                 if (value != this.selectedFileInfo)
                 {
                     this.selectedFileInfo = value;
-                    this.RaisePropertyChanged(nameof(this.SelectedFileInfo));
-                    this.RaisePropertyChanged(nameof(this.CurrentFilePath));
+                    this.OnPropertyChanged();
+                    this.OnPropertyChanged(nameof(this.CurrentFilePath));
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.rightImageSource = value;
-                this.RaisePropertyChanged(nameof(this.RightImageSource));
+                this.OnPropertyChanged();
             }
         }
 
@@ -112,7 +112,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.leftImageSource = value;
-                this.RaisePropertyChanged(nameof(this.LeftImageSource));
+                this.OnPropertyChanged();
             }
         }
 
@@ -126,7 +126,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.rightImageRect = value;
-                this.RaisePropertyChanged(nameof(this.RightImageRect));
+                this.OnPropertyChanged();
             }
         }
 
@@ -140,7 +140,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.leftImageRect = value;
-                this.RaisePropertyChanged(nameof(this.LeftImageRect));
+                this.OnPropertyChanged();
             }
         }
 
@@ -154,7 +154,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.totalPageCount = value;
-                this.RaisePropertyChanged(nameof(this.TotalPageCount));
+                this.OnPropertyChanged();
             }
         }
 
@@ -168,7 +168,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.currentPageNumber = value;
-                this.RaisePropertyChanged(nameof(this.CurrentPageNumber));
+                this.OnPropertyChanged();
             }
         }
 
@@ -182,7 +182,7 @@ namespace TotoBook.ViewModel
             set
             {
                 this.enableAutoPager = value;
-                this.RaisePropertyChanged(nameof(this.IsEnabledAutoPager));
+                this.OnPropertyChanged();
             }
         }
 
@@ -209,35 +209,63 @@ namespace TotoBook.ViewModel
                 });
         }
 
-        public override void Cleanup()
+        protected override void OnDeactivated()
         {
-            base.Cleanup();
+            base.OnDeactivated();
 
             try
             {
-                this.currentDirectory?.Cleanup();
+                if (this.currentDirectory != null)
+                {
+                    this.currentDirectory.IsActive = false;
+                    (this.currentDirectory as IDisposable)?.Dispose();
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deactivating currentDirectory: {ex.Message}");
+            }
 
             try
             {
-                this.rightFile?.Cleanup();
+                if (this.rightFile != null)
+                {
+                    this.rightFile.IsActive = false;
+                    (this.rightFile as IDisposable)?.Dispose();
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deactivating rightFile: {ex.Message}");
+            }
 
             try
             {
-                this.leftFile.Cleanup();
+                if (this.leftFile != null)
+                {
+                    this.leftFile.IsActive = false;
+                    (this.leftFile as IDisposable)?.Dispose();
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deactivating leftFile: {ex.Message}");
+            }
 
             foreach (var fileInfo in this.FileInfoList)
             {
                 try
                 {
-                    fileInfo?.Cleanup();
+                    if (fileInfo != null)
+                    {
+                        fileInfo.IsActive = false;
+                        (fileInfo as IDisposable)?.Dispose();
+                    }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error deactivating fileInfo: {ex.Message}");
+                }
             }
         }
 
@@ -417,14 +445,14 @@ namespace TotoBook.ViewModel
             var candidates = this.FileTreeRoot.AsEnumerable();
             fileInfo.GetAncestors().ForEach(f =>
             {
-                var node = candidates?.FirstOrDefault(t => t.Name.ToLower() == f.Name.ToLower());
+                var node = candidates?.FirstOrDefault(t => t.Name.ToLowerInvariant() == f.Name.ToLowerInvariant());
                 if (node == null) return;
 
                 node.IsExpanded = true;
                 candidates = node.Children;
             });
 
-            var targetNode = candidates?.FirstOrDefault(t => t.Name.ToLower() == fileInfo.Name.ToLower());
+            var targetNode = candidates?.FirstOrDefault(t => t.Name.ToLowerInvariant() == fileInfo.Name.ToLowerInvariant());
             if (targetNode != null)
             {
                 targetNode.IsSelected = false;
@@ -452,6 +480,7 @@ namespace TotoBook.ViewModel
 
                 case FileInfoViewModel.FileInfoType.Archive:
                 case FileInfoViewModel.FileInfoType.ArchivedDirectory:
+                case FileInfoViewModel.FileInfoType.NestedArchive:
                     this.NavigateToArchiveFile(nextFileInfo);
                     break;
 
@@ -472,7 +501,8 @@ namespace TotoBook.ViewModel
         private void NavigateToArchiveFile(FileInfoViewModel dist)
         {
             if (dist.FileType != FileInfoViewModel.FileInfoType.Archive
-                && dist.FileType != FileInfoViewModel.FileInfoType.ArchivedDirectory) return;
+                && dist.FileType != FileInfoViewModel.FileInfoType.ArchivedDirectory
+                && dist.FileType != FileInfoViewModel.FileInfoType.NestedArchive) return;
 
             this.SetCurrentDirectory(dist);
         }
@@ -497,7 +527,10 @@ namespace TotoBook.ViewModel
                 && this.currentDirectory != null
                 && !dist.FullName.Contains(this.currentDirectory.FullName))
             {
-                this.currentDirectory?.Cleanup();
+                if (this.currentDirectory != null)
+                {
+                    this.currentDirectory.IsActive = false;
+                }
             }
             this.currentDirectory = dist;
 
@@ -519,22 +552,32 @@ namespace TotoBook.ViewModel
             {
                 var bitmapImage1 = new BitmapImage();
                 bitmapImage1.BeginInit();
+                bitmapImage1.CacheOption = BitmapCacheOption.OnLoad;
                 bitmapImage1.StreamSource = stream1;
                 bitmapImage1.EndInit();
+                bitmapImage1.Freeze();
 
                 if (bitmapImage1.Width < bitmapImage1.Height)
                 {
                     var dist2 = this.GetNextFile(dist);
-
-                    using var stream2 = dist2.GetFileStream();
-                    var bitmapImage2 = new BitmapImage();
-                    bitmapImage2.BeginInit();
-                    bitmapImage2.StreamSource = stream2;
-                    bitmapImage2.EndInit();
-
-                    if (bitmapImage2.Width < bitmapImage2.Height)
+                    if (dist2 != null)
                     {
-                        this.DisplayImages(dist, bitmapImage1, dist2, bitmapImage2);
+                        using var stream2 = dist2.GetFileStream();
+                        var bitmapImage2 = new BitmapImage();
+                        bitmapImage2.BeginInit();
+                        bitmapImage2.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage2.StreamSource = stream2;
+                        bitmapImage2.EndInit();
+                        bitmapImage2.Freeze();
+
+                        if (bitmapImage2.Width < bitmapImage2.Height)
+                        {
+                            this.DisplayImages(dist, bitmapImage1, dist2, bitmapImage2);
+                        }
+                        else
+                        {
+                            this.DisplayImages(dist, bitmapImage1, null, null);
+                        }
                     }
                     else
                     {
@@ -564,22 +607,32 @@ namespace TotoBook.ViewModel
             {
                 var bitmapImage1 = new BitmapImage();
                 bitmapImage1.BeginInit();
+                bitmapImage1.CacheOption = BitmapCacheOption.OnLoad;
                 bitmapImage1.StreamSource = stream1;
                 bitmapImage1.EndInit();
+                bitmapImage1.Freeze();
 
                 if (bitmapImage1.Width < bitmapImage1.Height)
                 {
                     var dist2 = this.GetPrevFile(dist);
-
-                    using var stream2 = dist2.GetFileStream();
-                    var bitmapImage2 = new BitmapImage();
-                    bitmapImage2.BeginInit();
-                    bitmapImage2.StreamSource = stream2;
-                    bitmapImage2.EndInit();
-
-                    if (bitmapImage2.Width < bitmapImage2.Height)
+                    if (dist2 != null)
                     {
-                        this.DisplayImages(dist2, bitmapImage2, dist, bitmapImage1);
+                        using var stream2 = dist2.GetFileStream();
+                        var bitmapImage2 = new BitmapImage();
+                        bitmapImage2.BeginInit();
+                        bitmapImage2.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage2.StreamSource = stream2;
+                        bitmapImage2.EndInit();
+                        bitmapImage2.Freeze();
+
+                        if (bitmapImage2.Width < bitmapImage2.Height)
+                        {
+                            this.DisplayImages(dist2, bitmapImage2, dist, bitmapImage1);
+                        }
+                        else
+                        {
+                            this.DisplayImages(dist, bitmapImage1, null, null);
+                        }
                     }
                     else
                     {
@@ -665,6 +718,7 @@ namespace TotoBook.ViewModel
             {
                 FileInfoViewModel.FileInfoType.Archive => this.archiveSortDescription,
                 FileInfoViewModel.FileInfoType.ArchivedDirectory => this.archiveSortDescription,
+                FileInfoViewModel.FileInfoType.NestedArchive => this.archiveSortDescription,
                 FileInfoViewModel.FileInfoType.Directory => this.directorySortDescription,
                 _ => this.directorySortDescription
             };
@@ -792,6 +846,7 @@ namespace TotoBook.ViewModel
             {
                 case FileInfoViewModel.FileInfoType.Archive:
                 case FileInfoViewModel.FileInfoType.ArchivedDirectory:
+                case FileInfoViewModel.FileInfoType.NestedArchive:
                     this.archiveSortDescription = new SortDescription(propertyName, direction);
                     break;
 
