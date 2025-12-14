@@ -37,28 +37,28 @@ namespace TotoBook.Spi
         {
             return photoPluginList
                 .Select(spi => spi.GetPictureStream(filePath))
-                .First(stream => stream != null);
+                .FirstOrDefault(stream => stream != null);
         }
 
         public static Stream GetPictureStream(string fileName, byte[] buf)
         {
             return photoPluginList
                 .Select(spi => spi.GetPictureStream(fileName, buf))
-                .First(stream => stream != null);
+                .FirstOrDefault(stream => stream != null);
         }
 
         public static IEnumerable<FileInfo> GetArchiveInfo(string archiveFilePath)
         {
             return archivePluginList
                 .Select(spi => spi.GetArchiveInfo(archiveFilePath))
-                .First(stream => stream != null);
+                .FirstOrDefault(stream => stream != null);
         }
 
         public static byte[] GetFile(string archiveFilePath, int position)
         {
             return archivePluginList
                 .Select(spi => spi.GetFile(archiveFilePath, position))
-                .First(b => b != null);
+                .FirstOrDefault(b => b != null);
         }
     }
 }

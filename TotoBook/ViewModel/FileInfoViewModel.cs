@@ -15,9 +15,10 @@ namespace TotoBook.ViewModel
     /// <summary>
     /// ファイル
     /// </summary>
-    public class FileInfoViewModel : ObservableRecipient, IFileListItemViewModel, IFileTreeItemViewModel
+    public class FileInfoViewModel : ObservableRecipient, IFileListItemViewModel, IFileTreeItemViewModel, IDisposable
     {
         private IArchive currentArchive;
+        private bool disposed = false;
 
         public static FileInfoViewModel Dummy
         {
@@ -290,7 +291,7 @@ namespace TotoBook.ViewModel
                     break;
 
                 case ArchiveItem.ArchiveItemType.File:
-                    var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLower();
+                    var extension = Path.GetExtension(this.ArchiveItem.FileName).ToLowerInvariant();
 
                     this.FileType = ApplicationSettings.Instance.ArchiveExtensions.Contains(extension)
                         ? FileInfoType.NestedArchive
@@ -417,8 +418,8 @@ namespace TotoBook.ViewModel
                 case FileInfoType.NestedArchive:
                     {
                         var (archive, children) = Archive.GetChildrenForList(this.GetFileStream());
-                        //this.currentArchive?.Dispose();
-                        //this.currentArchive = archive;
+                        this.currentArchive?.Dispose();
+                        this.currentArchive = archive;
 
                         return children
                             .Select(item => new FileInfoViewModel(item, mainWindowViewModel, this))
@@ -427,6 +428,33 @@ namespace TotoBook.ViewModel
 
                 default:
                     return new FileInfoViewModel[0];
+            }
+        }
+
+        /// <summary>
+        /// リソースを解放します。
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// リソースを解放します。
+        /// </summary>
+        /// <param name="disposing">マネージドリソースを破棄する場合はtrue</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    // マネージドリソースの破棄
+                    currentArchive?.Dispose();
+                    currentArchive = null;
+                }
+                disposed = true;
             }
         }
     }

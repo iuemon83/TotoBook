@@ -11,13 +11,17 @@ namespace TotoBook
     public class Archive
     {
         /// <summary>
+        /// Shift-JIS エンコーディングのコードページ
+        /// </summary>
+        private const int SHIFT_JIS_CODE_PAGE = 932;
+        /// <summary>
         /// ファイル一覧に使用するための子要素を取得します。
         /// </summary>
         /// <returns></returns>
         public static (IArchive Archive, IEnumerable<ArchiveItem> Children) GetChildrenForList(string fullName)
         {
             var opts = new ReaderOptions();
-            var encoding = Encoding.GetEncoding(932);
+            var encoding = Encoding.GetEncoding(SHIFT_JIS_CODE_PAGE);
             opts.ArchiveEncoding = new ArchiveEncoding
             {
                 CustomDecoder = (data, x, y) => encoding.GetString(data)
@@ -35,7 +39,7 @@ namespace TotoBook
         public static (IArchive Archive, IEnumerable<ArchiveItem> Children) GetChildrenForList(Stream source)
         {
             var opts = new ReaderOptions();
-            var encoding = Encoding.GetEncoding(932);
+            var encoding = Encoding.GetEncoding(SHIFT_JIS_CODE_PAGE);
             opts.ArchiveEncoding = new ArchiveEncoding
             {
                 CustomDecoder = (data, x, y) => encoding.GetString(data)

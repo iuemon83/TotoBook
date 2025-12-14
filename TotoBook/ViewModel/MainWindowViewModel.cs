@@ -218,27 +218,39 @@ namespace TotoBook.ViewModel
                 if (this.currentDirectory != null)
                 {
                     this.currentDirectory.IsActive = false;
+                    (this.currentDirectory as IDisposable)?.Dispose();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deactivating currentDirectory: {ex.Message}");
+            }
 
             try
             {
                 if (this.rightFile != null)
                 {
                     this.rightFile.IsActive = false;
+                    (this.rightFile as IDisposable)?.Dispose();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deactivating rightFile: {ex.Message}");
+            }
 
             try
             {
                 if (this.leftFile != null)
                 {
                     this.leftFile.IsActive = false;
+                    (this.leftFile as IDisposable)?.Dispose();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deactivating leftFile: {ex.Message}");
+            }
 
             foreach (var fileInfo in this.FileInfoList)
             {
@@ -247,9 +259,13 @@ namespace TotoBook.ViewModel
                     if (fileInfo != null)
                     {
                         fileInfo.IsActive = false;
+                        (fileInfo as IDisposable)?.Dispose();
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error deactivating fileInfo: {ex.Message}");
+                }
             }
         }
 
@@ -429,14 +445,14 @@ namespace TotoBook.ViewModel
             var candidates = this.FileTreeRoot.AsEnumerable();
             fileInfo.GetAncestors().ForEach(f =>
             {
-                var node = candidates?.FirstOrDefault(t => t.Name.ToLower() == f.Name.ToLower());
+                var node = candidates?.FirstOrDefault(t => t.Name.ToLowerInvariant() == f.Name.ToLowerInvariant());
                 if (node == null) return;
 
                 node.IsExpanded = true;
                 candidates = node.Children;
             });
 
-            var targetNode = candidates?.FirstOrDefault(t => t.Name.ToLower() == fileInfo.Name.ToLower());
+            var targetNode = candidates?.FirstOrDefault(t => t.Name.ToLowerInvariant() == fileInfo.Name.ToLowerInvariant());
             if (targetNode != null)
             {
                 targetNode.IsSelected = false;
@@ -536,22 +552,32 @@ namespace TotoBook.ViewModel
             {
                 var bitmapImage1 = new BitmapImage();
                 bitmapImage1.BeginInit();
+                bitmapImage1.CacheOption = BitmapCacheOption.OnLoad;
                 bitmapImage1.StreamSource = stream1;
                 bitmapImage1.EndInit();
+                bitmapImage1.Freeze();
 
                 if (bitmapImage1.Width < bitmapImage1.Height)
                 {
                     var dist2 = this.GetNextFile(dist);
-
-                    using var stream2 = dist2.GetFileStream();
-                    var bitmapImage2 = new BitmapImage();
-                    bitmapImage2.BeginInit();
-                    bitmapImage2.StreamSource = stream2;
-                    bitmapImage2.EndInit();
-
-                    if (bitmapImage2.Width < bitmapImage2.Height)
+                    if (dist2 != null)
                     {
-                        this.DisplayImages(dist, bitmapImage1, dist2, bitmapImage2);
+                        using var stream2 = dist2.GetFileStream();
+                        var bitmapImage2 = new BitmapImage();
+                        bitmapImage2.BeginInit();
+                        bitmapImage2.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage2.StreamSource = stream2;
+                        bitmapImage2.EndInit();
+                        bitmapImage2.Freeze();
+
+                        if (bitmapImage2.Width < bitmapImage2.Height)
+                        {
+                            this.DisplayImages(dist, bitmapImage1, dist2, bitmapImage2);
+                        }
+                        else
+                        {
+                            this.DisplayImages(dist, bitmapImage1, null, null);
+                        }
                     }
                     else
                     {
@@ -581,22 +607,32 @@ namespace TotoBook.ViewModel
             {
                 var bitmapImage1 = new BitmapImage();
                 bitmapImage1.BeginInit();
+                bitmapImage1.CacheOption = BitmapCacheOption.OnLoad;
                 bitmapImage1.StreamSource = stream1;
                 bitmapImage1.EndInit();
+                bitmapImage1.Freeze();
 
                 if (bitmapImage1.Width < bitmapImage1.Height)
                 {
                     var dist2 = this.GetPrevFile(dist);
-
-                    using var stream2 = dist2.GetFileStream();
-                    var bitmapImage2 = new BitmapImage();
-                    bitmapImage2.BeginInit();
-                    bitmapImage2.StreamSource = stream2;
-                    bitmapImage2.EndInit();
-
-                    if (bitmapImage2.Width < bitmapImage2.Height)
+                    if (dist2 != null)
                     {
-                        this.DisplayImages(dist2, bitmapImage2, dist, bitmapImage1);
+                        using var stream2 = dist2.GetFileStream();
+                        var bitmapImage2 = new BitmapImage();
+                        bitmapImage2.BeginInit();
+                        bitmapImage2.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage2.StreamSource = stream2;
+                        bitmapImage2.EndInit();
+                        bitmapImage2.Freeze();
+
+                        if (bitmapImage2.Width < bitmapImage2.Height)
+                        {
+                            this.DisplayImages(dist2, bitmapImage2, dist, bitmapImage1);
+                        }
+                        else
+                        {
+                            this.DisplayImages(dist, bitmapImage1, null, null);
+                        }
                     }
                     else
                     {
