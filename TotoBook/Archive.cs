@@ -20,14 +20,17 @@ namespace TotoBook
         /// <returns></returns>
         public static (IArchive Archive, IEnumerable<ArchiveItem> Children) GetChildrenForList(string fullName)
         {
-            var opts = new ReaderOptions();
-            var encoding = Encoding.GetEncoding(SHIFT_JIS_CODE_PAGE);
-            opts.ArchiveEncoding = new ArchiveEncoding
+            var encoding = CodePagesEncodingProvider.Instance.GetEncoding(SHIFT_JIS_CODE_PAGE);
+            var opts = new ReaderOptions
             {
-                CustomDecoder = (data, x, y) => encoding.GetString(data)
+                LeaveStreamOpen = false,
+                ArchiveEncoding = new ArchiveEncoding
+                {
+                    CustomDecoder = (data, index, count, type) => encoding.GetString(data, index, count)
+                }
             };
 
-            var archive = ArchiveFactory.Open(fullName, opts);
+            var archive = ArchiveFactory.OpenArchive(fullName, opts);
 
             return (archive, GetArchiveItemList(archive.Entries));
         }
@@ -38,14 +41,16 @@ namespace TotoBook
         /// <returns></returns>
         public static (IArchive Archive, IEnumerable<ArchiveItem> Children) GetChildrenForList(Stream source)
         {
-            var opts = new ReaderOptions();
-            var encoding = Encoding.GetEncoding(SHIFT_JIS_CODE_PAGE);
-            opts.ArchiveEncoding = new ArchiveEncoding
+            var encoding = CodePagesEncodingProvider.Instance.GetEncoding(SHIFT_JIS_CODE_PAGE);
+            var opts = new ReaderOptions
             {
-                CustomDecoder = (data, x, y) => encoding.GetString(data)
+                ArchiveEncoding = new ArchiveEncoding
+                {
+                    CustomDecoder = (data, index, count, type) => encoding.GetString(data, index, count)
+                }
             };
 
-            var archive = ArchiveFactory.Open(source, opts);
+            var archive = ArchiveFactory.OpenArchive(source, opts);
 
             return (archive, GetArchiveItemList(archive.Entries));
         }

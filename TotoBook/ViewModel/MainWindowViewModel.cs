@@ -188,6 +188,8 @@ namespace TotoBook.ViewModel
 
         public string CurrentFilePath => this.SelectedFileInfo?.FullName ?? "";
 
+        public string Title => $"Toto {typeof(MainWindowViewModel).Assembly.GetName().Version}";
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
@@ -430,7 +432,7 @@ namespace TotoBook.ViewModel
         /// </summary>
         public void NavigateRoots()
         {
-            this.RefreshFileList(this.GetRoots());
+            this.SetCurrentDirectory(null);
         }
 
         /// <summary>
@@ -523,18 +525,24 @@ namespace TotoBook.ViewModel
             this.autoPagerTimer.Stop();
             this.IsEnabledAutoPager = false;
 
-            if (dist != null
-                && this.currentDirectory != null
-                && !dist.FullName.Contains(this.currentDirectory.FullName))
+            var destinationAncestors = new HashSet<FileInfoViewModel>();
+            for (var directory = dist; directory != null; directory = directory.Parent)
             {
-                if (this.currentDirectory != null)
+                destinationAncestors.Add(directory);
+            }
+
+            // 移動先でも使う祖先は保持し、不要になったアーカイブだけを解放する。
+            for (var directory = this.currentDirectory; directory != null; directory = directory.Parent)
+            {
+                if (!destinationAncestors.Contains(directory))
                 {
-                    this.currentDirectory.IsActive = false;
+                    directory.IsActive = false;
+                    directory.ReleaseArchive();
                 }
             }
             this.currentDirectory = dist;
 
-            var children = dist.GetChildrenForList();
+            var children = dist?.GetChildrenForList() ?? this.GetRoots();
             this.RefreshFileList(children);
         }
 
@@ -771,29 +779,68 @@ namespace TotoBook.ViewModel
         public void DeleteFileListItemCommand(FileInfoViewModel file, Func<bool> confirm)
         {
             var deleteIndex = this.FileInfoList.IndexOf(file);
-            var nextSelectIndex = deleteIndex == this.FileInfoList.Count - 1
-                ? deleteIndex - 1
-                : deleteIndex;
+            if (deleteIndex < 0) return;
+
+            var deleted = false;
 
             if (Directory.Exists(file.FullName))
             {
                 // ディレクトリの場合
                 if (!confirm()) return;
 
-                Directory.Delete(file.FullName, true);
-                this.FileInfoList.Remove(file);
+                try
+                {
+                    Directory.Delete(file.FullName, true);
+                    deleted = true;
+                }
+                catch (IOException)
+                {
+                    // 参照中などで削除できない場合は落とさない
+                    deleted = false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // 権限エラー時は落とさない
+                    deleted = false;
+                }
             }
-
-            if (File.Exists(file.FullName))
+            else if (File.Exists(file.FullName))
             {
                 // ファイルの場合
                 if (!confirm()) return;
 
-                File.Delete(file.FullName);
-                this.FileInfoList.Remove(file);
+                try
+                {
+                    file.ReleaseArchive();
+                    File.Delete(file.FullName);
+                    deleted = true;
+                }
+                catch (IOException)
+                {
+                    // 参照中などで削除できない場合は落とさない
+                    deleted = false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // 権限エラー時は落とさない
+                    deleted = false;
+                }
             }
 
-            if (this.FileInfoList.IsEmpty()) return;
+            // 削除対象が存在しない場合は処理しない
+            if (!deleted) return;
+
+            this.FileInfoList.Remove(file);
+
+            if (this.FileInfoList.IsEmpty())
+            {
+                this.SelectedFileInfo = null;
+                return;
+            }
+
+            var nextSelectIndex = deleteIndex >= this.FileInfoList.Count
+                ? this.FileInfoList.Count - 1
+                : deleteIndex;
 
             this.SelectedFileInfo = this.FileInfoList[nextSelectIndex];
         }

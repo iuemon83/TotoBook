@@ -310,7 +310,7 @@ namespace TotoBook.ViewModel
         {
             base.OnDeactivated();
 
-            this.currentArchive?.Dispose();
+            this.ReleaseArchive();
         }
 
         /// <summary>
@@ -432,6 +432,15 @@ namespace TotoBook.ViewModel
         }
 
         /// <summary>
+        /// 再度閲覧できるように、ViewModel を破棄せずアーカイブを解放します。
+        /// </summary>
+        internal void ReleaseArchive()
+        {
+            this.currentArchive?.Dispose();
+            this.currentArchive = null;
+        }
+
+        /// <summary>
         /// リソースを解放します。
         /// </summary>
         public void Dispose()
@@ -450,9 +459,7 @@ namespace TotoBook.ViewModel
             {
                 if (disposing)
                 {
-                    // マネージドリソースの破棄
-                    currentArchive?.Dispose();
-                    currentArchive = null;
+                    this.ReleaseArchive();
                 }
                 disposed = true;
             }

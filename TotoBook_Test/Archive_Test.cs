@@ -4,6 +4,7 @@ using TotoBook;
 using Xunit;
 using System.IO.Compression;
 using System.IO;
+using System.Text;
 
 namespace TotoBook_Test
 {
@@ -127,6 +128,42 @@ namespace TotoBook_Test
             var (_, actual) = Archive.GetChildrenForList(testFilePath);
 
             this.AssertArchiveItems(expectedTestFiles, actual);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ShiftJISのファイル名と内容を読み出せる(bool useStream)
+        {
+            var archivePath = Path.Combine(Path.GetTempPath(), $"TotoBookTest_{System.Guid.NewGuid()}.zip");
+            const string fileName = "日本語の画像.txt";
+            const string content = "アーカイブ内の内容";
+            try
+            {
+                using (var file = File.Create(archivePath))
+                using (var zip = new ZipArchive(file, ZipArchiveMode.Create, false, CodePagesEncodingProvider.Instance.GetEncoding(932)))
+                using (var writer = new StreamWriter(zip.CreateEntry(fileName).Open()))
+                {
+                    writer.Write(content);
+                }
+
+                using var source = useStream ? File.OpenRead(archivePath) : null;
+                var (archive, items) = useStream
+                    ? Archive.GetChildrenForList(source)
+                    : Archive.GetChildrenForList(archivePath);
+                using (archive)
+                {
+                    var item = Assert.Single(items);
+                    Assert.Equal(fileName, item.FileName);
+                    using var stream = item.CreateStream();
+                    using var reader = new StreamReader(stream);
+                    Assert.Equal(content, reader.ReadToEnd());
+                }
+            }
+            finally
+            {
+                File.Delete(archivePath);
+            }
         }
 
         [Fact]
