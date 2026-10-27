@@ -188,6 +188,8 @@ namespace TotoBook.ViewModel
 
         public string CurrentFilePath => this.SelectedFileInfo?.FullName ?? "";
 
+        public string Title => $"Toto {typeof(MainWindowViewModel).Assembly.GetName().Version}";
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
