@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using TotoBook;
@@ -280,6 +281,285 @@ namespace TotoBook_Test
 
                 // ArchivedDirectoryとして認識されているはず
                 Assert.Equal(FileInfoViewModel.FileInfoType.ArchivedDirectory, dirFileInfo.FileType);
+            }
+        }
+
+        [Fact]
+        public void DeleteFileListItemCommand_ファイルを削除する()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_DeleteFile_" + System.Guid.NewGuid());
+            Directory.CreateDirectory(tempDir);
+            var filePath = Path.Combine(tempDir, "delete_target.txt");
+            File.WriteAllText(filePath, "test");
+
+            try
+            {
+                var viewModel = new MainWindowViewModel();
+                var fileInfo = new FileInfoViewModel(new FileInfo(filePath), viewModel);
+                viewModel.FileInfoList = new ObservableCollection<FileInfoViewModel> { fileInfo };
+                viewModel.SelectedFileInfo = fileInfo;
+
+                viewModel.DeleteFileListItemCommand(fileInfo, () => true);
+
+                Assert.False(File.Exists(filePath));
+                Assert.Empty(viewModel.FileInfoList);
+                Assert.Null(viewModel.SelectedFileInfo);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        [Fact]
+        public void DeleteFileListItemCommand_ディレクトリを削除する()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_DeleteDir_" + System.Guid.NewGuid());
+            var targetDir = Path.Combine(tempDir, "target");
+            Directory.CreateDirectory(targetDir);
+            File.WriteAllText(Path.Combine(targetDir, "inside.txt"), "test");
+
+            try
+            {
+                var viewModel = new MainWindowViewModel();
+                var dirInfo = new FileInfoViewModel(new DirectoryInfo(targetDir), viewModel);
+                viewModel.FileInfoList = new ObservableCollection<FileInfoViewModel> { dirInfo };
+
+                viewModel.DeleteFileListItemCommand(dirInfo, () => true);
+
+                Assert.False(Directory.Exists(targetDir));
+                Assert.Empty(viewModel.FileInfoList);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        [Fact]
+        public void DeleteFileListItemCommand_アーカイブ閲覧後に削除できる()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_DeleteArchive_" + System.Guid.NewGuid());
+            var contentDir = Path.Combine(tempDir, "content");
+            Directory.CreateDirectory(contentDir);
+            File.WriteAllText(Path.Combine(contentDir, "dummy.txt"), "test");
+            var archivePath = Path.Combine(tempDir, "archive.zip");
+
+            try
+            {
+                ZipFile.CreateFromDirectory(contentDir, archivePath);
+
+                var viewModel = new MainWindowViewModel();
+
+                // 親ディレクトリに移動
+                var dirInfo = new FileInfoViewModel(new DirectoryInfo(tempDir), viewModel);
+                viewModel.Navigate(dirInfo);
+
+                // アーカイブを開く
+                var archiveItem = viewModel.FileInfoList
+                    .FirstOrDefault(f => f.FullName == archivePath);
+                Assert.NotNull(archiveItem);
+                viewModel.Navigate(archiveItem);
+
+                // 親へ戻る
+                viewModel.NavigateToParent();
+
+                // 再度アーカイブを取得して削除
+                var archiveItemAfter = viewModel.FileInfoList
+                    .FirstOrDefault(f => f.FullName == archivePath);
+                Assert.NotNull(archiveItemAfter);
+
+                viewModel.DeleteFileListItemCommand(archiveItemAfter, () => true);
+
+                Assert.False(File.Exists(archivePath));
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Navigate_アーカイブ内のディレクトリから外へ移動するとロックを解除する(bool navigateRoots)
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_LeaveArchive_" + System.Guid.NewGuid());
+            var contentDir = Path.Combine(tempDir, "content");
+            Directory.CreateDirectory(Path.Combine(contentDir, "images"));
+            File.WriteAllText(Path.Combine(contentDir, "images", "page.jpg"), "test");
+            var archivePath = Path.Combine(tempDir, "archive.zip");
+            ZipFile.CreateFromDirectory(contentDir, archivePath);
+            var viewModel = new MainWindowViewModel();
+            using var archiveItem = new FileInfoViewModel(new FileInfo(archivePath), viewModel);
+
+            try
+            {
+                viewModel.Navigate(archiveItem);
+                viewModel.Navigate(Assert.Single(viewModel.FileInfoList));
+
+                if (navigateRoots)
+                {
+                    viewModel.NavigateRoots();
+                }
+                else
+                {
+                    viewModel.Navigate(new FileInfoViewModel(new DirectoryInfo(tempDir), viewModel));
+                }
+
+                using var stream = File.Open(archivePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            }
+            finally
+            {
+                archiveItem.Dispose();
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void Navigate_同じアーカイブを再度開いても移動時にロックを解除する()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_ReopenArchive_" + System.Guid.NewGuid());
+            var contentDir = Path.Combine(tempDir, "content");
+            Directory.CreateDirectory(contentDir);
+            File.WriteAllText(Path.Combine(contentDir, "page.jpg"), "test");
+            var archivePath = Path.Combine(tempDir, "archive.zip");
+            ZipFile.CreateFromDirectory(contentDir, archivePath);
+            var viewModel = new MainWindowViewModel();
+            using var archiveItem = new FileInfoViewModel(new FileInfo(archivePath), viewModel);
+            var directoryItem = new FileInfoViewModel(new DirectoryInfo(tempDir), viewModel);
+
+            try
+            {
+                for (var i = 0; i < 2; i++)
+                {
+                    viewModel.Navigate(archiveItem);
+                    using (var stream = Assert.Single(viewModel.FileInfoList).GetFileStream())
+                    using (var reader = new StreamReader(stream))
+                    {
+                        Assert.Equal("test", reader.ReadToEnd());
+                    }
+                    viewModel.Navigate(directoryItem);
+                    using var exclusiveStream = File.Open(archivePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                }
+            }
+            finally
+            {
+                archiveItem.Dispose();
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void Navigate_ネストされたアーカイブを再度開いても親の内容を読み込める()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_ReopenNested_" + System.Guid.NewGuid());
+            var contentDir = Path.Combine(tempDir, "content");
+            Directory.CreateDirectory(Path.Combine(contentDir, "folder"));
+            File.Copy(TestNestedArchivePath, Path.Combine(contentDir, "folder", "nested.zip"));
+            var archivePath = Path.Combine(tempDir, "archive.zip");
+            ZipFile.CreateFromDirectory(contentDir, archivePath);
+            var viewModel = new MainWindowViewModel();
+            using var archiveItem = new FileInfoViewModel(new FileInfo(archivePath), viewModel);
+
+            try
+            {
+                viewModel.Navigate(archiveItem);
+                var folder = Assert.Single(viewModel.FileInfoList);
+                viewModel.Navigate(folder);
+                var nestedArchive = Assert.Single(viewModel.FileInfoList);
+
+                for (var i = 0; i < 2; i++)
+                {
+                    viewModel.Navigate(nestedArchive);
+                    using (var stream = viewModel.FileInfoList.First().GetFileStream())
+                    {
+                        Assert.True(stream.Length > 0);
+                    }
+
+                    viewModel.NavigateToParent();
+                    Assert.Same(nestedArchive, Assert.Single(viewModel.FileInfoList));
+                    using var nestedStream = nestedArchive.GetFileStream();
+                    Assert.True(nestedStream.Length > 0);
+                }
+            }
+            finally
+            {
+                viewModel.NavigateRoots();
+                archiveItem.Dispose();
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void DeleteFileListItemCommand_ロック中は一覧と選択を維持して再試行できる()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_DeleteLocked_" + System.Guid.NewGuid());
+            Directory.CreateDirectory(tempDir);
+            var filePath = Path.Combine(tempDir, "locked.jpg");
+            File.WriteAllText(filePath, "test");
+
+            try
+            {
+                var viewModel = new MainWindowViewModel();
+                var fileInfo = new FileInfoViewModel(new FileInfo(filePath), viewModel);
+                viewModel.FileInfoList = new ObservableCollection<FileInfoViewModel> { fileInfo };
+                viewModel.SelectedFileInfo = fileInfo;
+
+                using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    viewModel.DeleteFileListItemCommand(fileInfo, () => true);
+
+                    Assert.True(File.Exists(filePath));
+                    Assert.Same(fileInfo, Assert.Single(viewModel.FileInfoList));
+                    Assert.Same(fileInfo, viewModel.SelectedFileInfo);
+                }
+
+                viewModel.DeleteFileListItemCommand(fileInfo, () => true);
+                Assert.False(File.Exists(filePath));
+                Assert.Empty(viewModel.FileInfoList);
+                Assert.Null(viewModel.SelectedFileInfo);
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void DeleteFileListItemCommand_確認が否定なら削除しない()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "TotoBookTest_DeleteCancel_" + System.Guid.NewGuid());
+            Directory.CreateDirectory(tempDir);
+            var filePath = Path.Combine(tempDir, "keep.txt");
+            File.WriteAllText(filePath, "test");
+
+            try
+            {
+                var viewModel = new MainWindowViewModel();
+                var fileInfo = new FileInfoViewModel(new FileInfo(filePath), viewModel);
+                viewModel.FileInfoList = new ObservableCollection<FileInfoViewModel> { fileInfo };
+
+                viewModel.DeleteFileListItemCommand(fileInfo, () => false);
+
+                Assert.True(File.Exists(filePath));
+                Assert.Single(viewModel.FileInfoList);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
             }
         }
     }
