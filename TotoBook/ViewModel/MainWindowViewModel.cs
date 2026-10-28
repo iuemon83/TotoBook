@@ -778,19 +778,22 @@ namespace TotoBook.ViewModel
 
         public void DeleteFileListItemCommand(FileInfoViewModel file, Func<bool> confirm)
         {
+            var fileSystemInfo = file.FileSystemInfo;
+            if (fileSystemInfo == null) return;
+
             var deleteIndex = this.FileInfoList.IndexOf(file);
             if (deleteIndex < 0) return;
 
             var deleted = false;
 
-            if (Directory.Exists(file.FullName))
+            if (fileSystemInfo is DirectoryInfo directory && Directory.Exists(directory.FullName))
             {
                 // ディレクトリの場合
                 if (!confirm()) return;
 
                 try
                 {
-                    Directory.Delete(file.FullName, true);
+                    Directory.Delete(directory.FullName, true);
                     deleted = true;
                 }
                 catch (IOException)
@@ -804,7 +807,7 @@ namespace TotoBook.ViewModel
                     deleted = false;
                 }
             }
-            else if (File.Exists(file.FullName))
+            else if (fileSystemInfo is FileInfo sourceFile && File.Exists(sourceFile.FullName))
             {
                 // ファイルの場合
                 if (!confirm()) return;
@@ -812,7 +815,7 @@ namespace TotoBook.ViewModel
                 try
                 {
                     file.ReleaseArchive();
-                    File.Delete(file.FullName);
+                    File.Delete(sourceFile.FullName);
                     deleted = true;
                 }
                 catch (IOException)

@@ -133,7 +133,7 @@ namespace TotoBook.ViewModel
             set { this.icon = value; }
         }
 
-        private FileSystemInfo FileSystemInfo { get; set; }
+        internal FileSystemInfo FileSystemInfo { get; private set; }
         private ArchiveItem ArchiveItem { get; set; }
 
         public FileInfoType FileType { get; set; }
